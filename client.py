@@ -325,27 +325,54 @@ class AuthApp:
     def login(self):
         username = self.username_entry.get()
         password = self.password_entry.get()
+        
+        # Проверка на пустые поля
+        if not username or not password:
+            messagebox.showerror("Ошибка", "Пожалуйста, заполните все поля")
+            return
+        
         try:
-            response = requests.post("http://127.0.0.1:8001/login", 
-                json={"username": username, "password": password})
-            response.raise_for_status()
-            self.token = response.json().get("token")
-            print(f"Received token: {self.token}")  # Для отладки
-            messagebox.showinfo("Успех", "Вы вошли в систему!")
-            self.root.destroy()
-            self.start_game()
+            response = requests.post(
+                "http://127.0.0.1:8001/login", 
+                json={"username": username, "password": password}
+            )
+            
+            if response.status_code == 200:
+                self.token = response.json().get("token")
+                messagebox.showinfo("Успех", f"Добро пожаловать, {username}!")
+                self.root.destroy()
+                self.start_game()
+            elif response.status_code == 401:
+                messagebox.showerror("Ошибка", "Неверный логин или пароль")
+            else:
+                messagebox.showerror("Ошибка", "Ошибка сервера. Попробуйте позже")
+            
+        except requests.ConnectionError:
+            messagebox.showerror(
+                "Ошибка подключения", 
+                "Не удалось подключиться к серверу.\nПроверьте подключение к интернету или попробуйте позже."
+            )
         except requests.RequestException as e:
-            messagebox.showerror("Ошибка", f"Ошибка входа: {e}")
+            messagebox.showerror("Ошибка", f"Произошла ошибка: {str(e)}")
 
     def open_registration(self):
         reg_window = tk.Toplevel(self.root)
         reg_window.title("Регистрация")
+        reg_window.geometry("300x250")  # Фиксированный размер окна
+        
+        # Центрируем окно
+        reg_window.update_idletasks()
+        width = reg_window.winfo_width()
+        height = reg_window.winfo_height()
+        x = (reg_window.winfo_screenwidth() // 2) - (width // 2)
+        y = (reg_window.winfo_screenheight() // 2) - (height // 2)
+        reg_window.geometry(f"{width}x{height}+{x}+{y}")
 
-        tk.Label(reg_window, text="Логин").pack(pady=5)
+        tk.Label(reg_window, text="Логин (минимум 3 символа)").pack(pady=5)
         username_entry = tk.Entry(reg_window)
         username_entry.pack(pady=5)
 
-        tk.Label(reg_window, text="Пароль").pack(pady=5)
+        tk.Label(reg_window, text="Пароль (минимум 4 символа)").pack(pady=5)
         password_entry = tk.Entry(reg_window, show="*")
         password_entry.pack(pady=5)
 
@@ -358,33 +385,63 @@ class AuthApp:
             password = password_entry.get()
             confirm_password = confirm_password_entry.get()
 
+            # Проверки ввода
+            if not username or not password or not confirm_password:
+                messagebox.showerror("Ошибка", "Пожалуйста, заполните все поля")
+                return
+            
+            if len(username) < 3:
+                messagebox.showerror("Ошибка", "Логин должен содержать минимум 3 символа")
+                return
+            
+            if len(password) < 4:
+                messagebox.showerror("Ошибка", "Пароль должен содержать минимум 4 символа")
+                return
+
             if password != confirm_password:
-                messagebox.showerror("Ошибка", "Пароли не совпадают!")
+                messagebox.showerror("Ошибка", "Пароли не совпадают")
                 return
 
             try:
-                # Создаем правильную структуру данных для запроса
                 data = {
                     "username": username,
                     "password": password
                 }
                 response = requests.post(
                     "http://127.0.0.1:8001/register", 
-                    json=data,  # Используем json вместо params
+                    json=data,
                     headers={"Content-Type": "application/json"}
                 )
                 
                 if response.status_code == 200:
-                    messagebox.showinfo("Успех", "Регистрация успешна! Теперь вы можете войти.")
+                    messagebox.showinfo(
+                        "Успех", 
+                        "Регистрация успешна!\nТеперь вы можете войти в игру."
+                    )
                     reg_window.destroy()
+                elif response.status_code == 400:
+                    error_message = response.json().get("detail", "")
+                    if "Username already exists" in error_message:
+                        messagebox.showerror("Ошибка", "Пользователь с таким именем уже существует")
+                    else:
+                        messagebox.showerror("Ошибка", error_message)
                 else:
-                    error_message = response.json().get("detail", "Неизвестная ошибка")
-                    messagebox.showerror("Ошибка", f"Ошибка регистрации: {error_message}")
-                    
+                    messagebox.showerror("Ошибка", "Ошибка сервера. Попробуйте позже")
+                
+            except requests.ConnectionError:
+                messagebox.showerror(
+                    "Ошибка подключения", 
+                    "Не удалось подключиться к серверу.\nПроверьте подключение к интернету или попробуйте позже."
+                )
             except requests.RequestException as e:
-                messagebox.showerror("Ошибка", f"Ошибка регистрации: {str(e)}")
+                messagebox.showerror("Ошибка", f"Произошла ошибка: {str(e)}")
 
-        tk.Button(reg_window, text="Зарегистрироваться", command=register).pack(pady=5)
+        tk.Button(
+            reg_window, 
+            text="Зарегистрироваться",
+            command=register,
+            width=20
+        ).pack(pady=15)
 
     def start_game(self):
         if not self.token:
