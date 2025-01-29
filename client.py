@@ -307,20 +307,97 @@ class FlappyBird:
 class AuthApp:
     def __init__(self):
         self.root = tk.Tk()
-        self.root.title("Авторизация")
+        self.root.title("Flappy Bird - Авторизация")
+        self.root.geometry("500x600")  # Увеличиваем размер окна
+        self.root.resizable(False, False)
+        
+        # Центрируем окно
+        screen_width = self.root.winfo_screenwidth()
+        screen_height = self.root.winfo_screenheight()
+        x = (screen_width - 500) // 2  # Обновляем координаты с учетом новой ширины
+        y = (screen_height - 600) // 2  # Обновляем координаты с учетом новой высоты
+        self.root.geometry(f"500x600+{x}+{y}")
+        
+        # Создаем основной контейнер с отступами
+        main_frame = tk.Frame(self.root, padx=50, pady=30)  # Увеличиваем отступы
+        main_frame.pack(expand=True, fill='both')
+        
+        # Заголовок с измененными параметрами
+        title_label = tk.Label(
+            main_frame, 
+            text="Добро пожаловать\nв Flappy Bird!", 
+            font=("Arial", 24, "bold"),  # Увеличиваем размер шрифта
+            pady=30,
+            justify=tk.CENTER  # Центрируем текст
+        )
+        title_label.pack()
+        
+        # Создаем рамку для формы
+        form_frame = tk.Frame(main_frame, pady=20)
+        form_frame.pack()
+        
+        # Поля ввода
+        tk.Label(form_frame, text="Логин:", font=("Arial", 12)).pack()
+        self.username_entry = tk.Entry(
+            form_frame, 
+            font=("Arial", 12),
+            width=30
+        )
+        self.username_entry.pack(pady=(5, 15))
+        
+        tk.Label(form_frame, text="Пароль:", font=("Arial", 12)).pack()
+        self.password_entry = tk.Entry(
+            form_frame, 
+            show="•",
+            font=("Arial", 12),
+            width=30
+        )
+        self.password_entry.pack(pady=(5, 20))
+        
+        # Кнопки
+        buttons_frame = tk.Frame(main_frame)
+        buttons_frame.pack(pady=20)
+        
+        login_btn = tk.Button(
+            buttons_frame,
+            text="Войти",
+            command=self.login,
+            width=15,
+            font=("Arial", 11),
+            bg="#4CAF50",
+            fg="white",
+            relief=tk.RAISED,
+            cursor="hand2"
+        )
+        login_btn.pack(pady=5)
+        
+        register_btn = tk.Button(
+            buttons_frame,
+            text="Регистрация",
+            command=self.open_registration,
+            width=15,
+            font=("Arial", 11),
+            bg="#2196F3",
+            fg="white",
+            relief=tk.RAISED,
+            cursor="hand2"
+        )
+        register_btn.pack(pady=5)
+        
+        exit_btn = tk.Button(
+            buttons_frame,
+            text="Выход",
+            command=self.root.quit,
+            width=15,
+            font=("Arial", 11),
+            bg="#f44336",
+            fg="white",
+            relief=tk.RAISED,
+            cursor="hand2"
+        )
+        exit_btn.pack(pady=5)
+        
         self.token = None
-
-        tk.Label(self.root, text="Логин").pack(pady=5)
-        self.username_entry = tk.Entry(self.root)
-        self.username_entry.pack(pady=5)
-
-        tk.Label(self.root, text="Пароль").pack(pady=5)
-        self.password_entry = tk.Entry(self.root, show="*")
-        self.password_entry.pack(pady=5)
-
-        tk.Button(self.root, text="Войти", command=self.login).pack(pady=5)
-        tk.Button(self.root, text="Регистрация", command=self.open_registration).pack(pady=5)
-        tk.Button(self.root, text="Закрыть", command=self.root.quit).pack(pady=5)
 
     def login(self):
         username = self.username_entry.get()
@@ -357,34 +434,77 @@ class AuthApp:
 
     def open_registration(self):
         reg_window = tk.Toplevel(self.root)
-        reg_window.title("Регистрация")
-        reg_window.geometry("300x250")  # Фиксированный размер окна
+        reg_window.title("Flappy Bird - Регистрация")
+        reg_window.geometry("400x550")
+        reg_window.resizable(False, False)
         
-        # Центрируем окно
-        reg_window.update_idletasks()
-        width = reg_window.winfo_width()
-        height = reg_window.winfo_height()
-        x = (reg_window.winfo_screenwidth() // 2) - (width // 2)
-        y = (reg_window.winfo_screenheight() // 2) - (height // 2)
-        reg_window.geometry(f"{width}x{height}+{x}+{y}")
-
-        tk.Label(reg_window, text="Логин (минимум 3 символа)").pack(pady=5)
-        username_entry = tk.Entry(reg_window)
-        username_entry.pack(pady=5)
-
-        tk.Label(reg_window, text="Пароль (минимум 4 символа)").pack(pady=5)
-        password_entry = tk.Entry(reg_window, show="*")
-        password_entry.pack(pady=5)
-
-        tk.Label(reg_window, text="Подтверждение пароля").pack(pady=5)
-        confirm_password_entry = tk.Entry(reg_window, show="*")
-        confirm_password_entry.pack(pady=5)
-
+        # Центрируем окно регистрации
+        screen_width = reg_window.winfo_screenwidth()
+        screen_height = reg_window.winfo_screenheight()
+        x = (screen_width - 400) // 2
+        y = (screen_height - 550) // 2
+        reg_window.geometry(f"400x550+{x}+{y}")
+        
+        # Основной контейнер
+        main_frame = tk.Frame(reg_window, padx=40, pady=20)
+        main_frame.pack(expand=True, fill='both')
+        
+        # Заголовок
+        title_label = tk.Label(
+            main_frame,
+            text="Регистрация нового игрока",
+            font=("Arial", 16, "bold"),
+            pady=20
+        )
+        title_label.pack()
+        
+        # Форма регистрации
+        form_frame = tk.Frame(main_frame)
+        form_frame.pack(pady=20)
+        
+        tk.Label(
+            form_frame,
+            text="Логин (минимум 3 символа):",
+            font=("Arial", 12)
+        ).pack()
+        username_entry = tk.Entry(
+            form_frame,
+            font=("Arial", 12),
+            width=30
+        )
+        username_entry.pack(pady=(5, 15))
+        
+        tk.Label(
+            form_frame,
+            text="Пароль (минимум 4 символа):",
+            font=("Arial", 12)
+        ).pack()
+        password_entry = tk.Entry(
+            form_frame,
+            show="•",
+            font=("Arial", 12),
+            width=30
+        )
+        password_entry.pack(pady=(5, 15))
+        
+        tk.Label(
+            form_frame,
+            text="Подтверждение пароля:",
+            font=("Arial", 12)
+        ).pack()
+        confirm_password_entry = tk.Entry(
+            form_frame,
+            show="•",
+            font=("Arial", 12),
+            width=30
+        )
+        confirm_password_entry.pack(pady=(5, 20))
+        
         def register():
             username = username_entry.get()
             password = password_entry.get()
             confirm_password = confirm_password_entry.get()
-
+            
             # Проверки ввода
             if not username or not password or not confirm_password:
                 messagebox.showerror("Ошибка", "Пожалуйста, заполните все поля")
@@ -419,14 +539,25 @@ class AuthApp:
                         "Регистрация успешна!\nТеперь вы можете войти в игру."
                     )
                     reg_window.destroy()
-                elif response.status_code == 400:
-                    error_message = response.json().get("detail", "")
-                    if "Username already exists" in error_message:
-                        messagebox.showerror("Ошибка", "Пользователь с таким именем уже существует")
-                    else:
-                        messagebox.showerror("Ошибка", error_message)
                 else:
-                    messagebox.showerror("Ошибка", "Ошибка сервера. Попробуйте позже")
+                    # Обрабатываем все ошибки сервера единообразно
+                    try:
+                        error_detail = response.json().get("detail", "")
+                        if "Username already exists" in error_detail:
+                            messagebox.showerror(
+                                "Ошибка регистрации", 
+                                "Пользователь с таким именем уже существует.\nПожалуйста, выберите другое имя пользователя."
+                            )
+                        else:
+                            messagebox.showerror(
+                                "Ошибка регистрации", 
+                                "Не удалось зарегистрировать пользователя.\nПожалуйста, попробуйте позже."
+                            )
+                    except ValueError:
+                        messagebox.showerror(
+                            "Ошибка сервера", 
+                            "Произошла ошибка при обработке запроса.\nПожалуйста, попробуйте позже."
+                        )
                 
             except requests.ConnectionError:
                 messagebox.showerror(
@@ -434,14 +565,24 @@ class AuthApp:
                     "Не удалось подключиться к серверу.\nПроверьте подключение к интернету или попробуйте позже."
                 )
             except requests.RequestException as e:
-                messagebox.showerror("Ошибка", f"Произошла ошибка: {str(e)}")
+                messagebox.showerror(
+                    "Ошибка соединения", 
+                    "Произошла ошибка при подключении к серверу.\nПожалуйста, попробуйте позже."
+                )
 
-        tk.Button(
-            reg_window, 
+        # Кнопка регистрации
+        register_btn = tk.Button(
+            form_frame,
             text="Зарегистрироваться",
             command=register,
-            width=20
-        ).pack(pady=15)
+            width=20,
+            font=("Arial", 11),
+            bg="#4CAF50",
+            fg="white",
+            relief=tk.RAISED,
+            cursor="hand2"
+        )
+        register_btn.pack(pady=20)
 
     def start_game(self):
         if not self.token:
