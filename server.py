@@ -291,11 +291,8 @@ async def get_leaderboard():
     finally:
         conn.close()
 
-@app.post("/change-password")
-async def change_password(
-    password_data: PasswordChange,
-    authorization: Optional[str] = Header(None)
-):
+@app.patch("/change-password")
+async def change_password(password_data: PasswordChange, authorization: Optional[str] = Header(None)):
     if not authorization:
         raise HTTPException(status_code=401, detail="Authorization header missing")
 
@@ -309,20 +306,16 @@ async def change_password(
         conn = sqlite3.connect(DATABASE_FILE)
         c = conn.cursor()
         
-        # Получаем текущий пароль пользователя
         c.execute("SELECT password FROM users WHERE id = ?", (user_id,))
         result = c.fetchone()
-        
         if not result:
             raise HTTPException(status_code=404, detail="User not found")
-            
+        
         current_hashed = result[0]
         
-        # Проверяем текущий пароль
         if not verify_password(password_data.current_password, current_hashed):
             raise HTTPException(status_code=400, detail="Current password is incorrect")
         
-        # Обновляем пароль
         new_hashed = hash_password(password_data.new_password)
         c.execute(
             "UPDATE users SET password = ? WHERE id = ?",

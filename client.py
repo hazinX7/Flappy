@@ -969,7 +969,7 @@ class ProfileWindow:
                     "Authorization": f"Bearer {self.token}",
                     "Content-Type": "application/json"
                 }
-                response = requests.post(
+                response = requests.patch(
                     "http://127.0.0.1:8001/change-password",
                     json={
                         "current_password": current,
