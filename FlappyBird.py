@@ -5,6 +5,7 @@ import random
 
 class FlappyBird:
     def __init__(self):
+        pygame.init()
         self.screen = pygame.display.set_mode((400, 708))
         self.bird = pygame.Rect(65, 50, 50, 50)
         
@@ -17,7 +18,15 @@ class FlappyBird:
         ]
         self.wallUp = pygame.image.load("./assets/bottom.png").convert_alpha()
         self.wallDown = pygame.image.load("./assets/top.png").convert_alpha()
-
+        
+        # Загрузка медалей
+        self.medals = [
+            pygame.image.load("./assets/first.png").convert_alpha(),
+            pygame.image.load("./assets/second.png").convert_alpha(),
+            pygame.image.load("./assets/3rd.png").convert_alpha()
+        ]
+        self.medals = [pygame.transform.scale(medal, (30, 30)) for medal in self.medals]
+        
         # Инициализация игровых параметров
         self.gap = 130
         self.gapx = 50
@@ -32,6 +41,7 @@ class FlappyBird:
         self.offset = random.randint(-110, 110)
         self.menu_counter = 0
         self.game_over_time = 0
+        self.leaderboard_data = []
 
     def updateWalls(self):
         self.wallx -= 2
@@ -93,51 +103,6 @@ class FlappyBird:
             pygame.display.update()
             clock.tick(60)
 
-    def game_over_screen(self):
-        clock = pygame.time.Clock()
-        font = pygame.font.SysFont("Arial", 20)
-
-        while True:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    sys.exit()
-                elif event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_RETURN:
-                        return
-
-            self.screen.fill((255, 255, 255))
-            self.screen.blit(self.background, (0, 0))
-
-            text = font.render("Нажмите ENTER для продолжения.", True, (255, 255, 255))
-            text_rect = text.get_rect(center=(200, 400))
-            self.screen.blit(text, text_rect)
-
-            score_text = font.render(f"Ваш счет: {self.counter}", True, (255, 255, 255))
-            score_rect = score_text.get_rect(center=(200, 350))
-            self.screen.blit(score_text, score_rect)
-
-            pygame.display.update()
-            clock.tick(60)
-
-    def reset_game(self):
-        self.bird.y = 50
-        self.birdY = 50
-        self.dead = False
-        self.counter = 0
-        self.wallx = 400
-        self.offset = random.randint(-110, 110)
-        self.gravity = 5
-
-    def run(self):
-        pygame.font.init()
-        font = pygame.font.SysFont("Arial", 50)
-        self.show_menu()
-
-        while True:
-            self.game_loop()
-            self.game_over_screen()
-            self.reset_game()
-
     def game_loop(self):
         clock = pygame.time.Clock()
         font = pygame.font.SysFont("Arial", 30)
@@ -155,7 +120,6 @@ class FlappyBird:
             self.screen.fill((255, 255, 255))
             self.screen.blit(self.background, (0, 0))
 
-            # Изменение размера промежутка в зависимости от счета
             if self.counter < 3:
                 self.gapx = 190
             elif self.counter == 3 or self.counter > 3 and self.counter < 6:
@@ -178,21 +142,96 @@ class FlappyBird:
             self.birdUpdate()
             pygame.display.update()
 
-        # Добавляем задержку перед отображением экрана окончания игры
-        self.game_over_time = pygame.time.get_ticks() + 1500  # 1000 миллисекунд = 1 секунда
-        while pygame.time.get_ticks() < self.game_over_time:
-            clock.tick(60)
+    def update_leaderboard(self):
+        """Только получает данные таблицы лидеров, без отрисовки"""
+        # Здесь должен быть код для получения данных таблицы лидеров
+        # self.leaderboard_data = [...] # получение данных с сервера
+        pass
+
+    def game_over_screen(self):
+        clock = pygame.time.Clock()
+        self.update_leaderboard()
+
+        while True:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
+                    pygame.quit()
                     sys.exit()
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_RETURN:
+                        return "restart"
+                    elif event.key == pygame.K_ESCAPE:
+                        return "quit"
+                    elif event.key == pygame.K_TAB:
+                        return "profile"
 
+            # Очищаем экран и рисуем фон
             self.screen.fill((255, 255, 255))
             self.screen.blit(self.background, (0, 0))
+
+            # Шрифты
+            title_font = pygame.font.SysFont("Arial", 40)
             font = pygame.font.SysFont("Arial", 30)
-            text = font.render("Игра окончена!", True, (255, 255, 255))
-            text_rect = text.get_rect(center=(200, 350))
-            self.screen.blit(text, text_rect)
+
+            # Только основные надписи
+            game_over = title_font.render("ИГРА ОКОНЧЕНА!", True, (255, 255, 255))
+            score = font.render(f"ВАШ СЧЁТ: {self.counter}", True, (255, 255, 255))
+            enter_text = font.render("ENTER - НОВАЯ ИГРА", True, (255, 255, 255))
+            exit_text = font.render("ESC - ВЫХОД", True, (255, 255, 255))
+
+            # Позиционирование
+            game_over_rect = game_over.get_rect(centerx=self.screen.get_width() // 2, y=50)
+            score_rect = score.get_rect(centerx=self.screen.get_width() // 2, y=150)
+            enter_rect = enter_text.get_rect(centerx=self.screen.get_width() // 2, y=500)
+            exit_rect = exit_text.get_rect(centerx=self.screen.get_width() // 2, y=550)
+
+            # Отрисовка
+            self.screen.blit(game_over, game_over_rect)
+            self.screen.blit(score, score_rect)
+            self.screen.blit(enter_text, enter_rect)
+            self.screen.blit(exit_text, exit_rect)
+
             pygame.display.update()
+            clock.tick(60)
+
+    def reset_game(self):
+        self.bird.y = 50
+        self.birdY = 50
+        self.dead = False
+        self.counter = 0
+        self.wallx = 400
+        self.offset = random.randint(-110, 110)
+        self.gravity = 5
+
+    def run(self):
+        clock = pygame.time.Clock()
+        self.show_menu()
+        
+        while True:
+            # Игровой цикл
+            while not self.dead:
+                self.game_loop()
+                clock.tick(60)
+            
+            # После смерти птицы
+            self.sprite = 2
+            self.screen.blit(self.birdSprites[self.sprite], (70, self.birdY))
+            pygame.display.update()
+            
+            # Сохраняем результат
+            self.save_score()
+            
+            # Показываем экран окончания игры
+            result = self.game_over_screen()
+            if result == "restart":
+                self.reset_game()
+                continue
+            elif result == "profile":
+                pygame.quit()
+                return "profile"
+            else:
+                pygame.quit()
+                return "quit"
 
 if __name__ == "__main__":
     FlappyBird().run()

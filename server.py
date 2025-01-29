@@ -34,6 +34,16 @@ class UserOut(BaseModel):
 class ScoreCreate(BaseModel):
     score: int
 
+class PasswordChange(BaseModel):
+    current_password: str
+    new_password: str
+
+class UserStats(BaseModel):
+    total_games: int
+    best_score: int
+    average_score: float
+    last_game_date: Optional[datetime]
+
 def hash_password(password: str) -> str:
     return hashlib.sha256(password.encode()).hexdigest()
 
@@ -85,6 +95,10 @@ def create_tables():
                 FOREIGN KEY (user_id) REFERENCES users(id)
             )
         ''')
+        
+        # Добавляем индексы для оптимизации запросов
+        c.execute('CREATE INDEX IF NOT EXISTS idx_scores_user_id ON scores(user_id)')
+        c.execute('CREATE INDEX IF NOT EXISTS idx_scores_score ON scores(score)')
         
         conn.commit()
     except Exception as e:
@@ -291,6 +305,108 @@ async def get_leaderboard():
         return results
     finally:
         conn.close()
+
+@app.post("/change-password")
+async def change_password(
+    password_data: PasswordChange,
+    authorization: Optional[str] = Header(None)
+):
+    if not authorization:
+        raise HTTPException(status_code=401, detail="Authorization header missing")
+
+    if not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Invalid authorization format")
+
+    try:
+        token = authorization.split(" ")[1]
+        user_id = verify_token(token)
+        
+        conn = sqlite3.connect(DATABASE_FILE)
+        c = conn.cursor()
+        
+        # Получаем текущий пароль пользователя
+        c.execute("SELECT password FROM users WHERE id = ?", (user_id,))
+        result = c.fetchone()
+        
+        if not result:
+            raise HTTPException(status_code=404, detail="User not found")
+            
+        current_hashed = result[0]
+        
+        # Проверяем текущий пароль
+        if not verify_password(password_data.current_password, current_hashed):
+            raise HTTPException(status_code=400, detail="Current password is incorrect")
+        
+        # Обновляем пароль
+        new_hashed = hash_password(password_data.new_password)
+        c.execute(
+            "UPDATE users SET password = ? WHERE id = ?",
+            (new_hashed, user_id)
+        )
+        conn.commit()
+        
+        return {"message": "Password successfully changed"}
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        if 'conn' in locals():
+            conn.close()
+
+@app.get("/user-stats", response_model=dict)
+async def get_user_stats():
+    try:
+        conn = sqlite3.connect(DATABASE_FILE)
+        c = conn.cursor()
+        
+        # Получаем статистику по каждому игроку
+        c.execute("""
+            WITH PlayerStats AS (
+                SELECT 
+                    u.username,
+                    COUNT(*) as games_played,
+                    MAX(s.score) as best_score,
+                    AVG(s.score) as avg_score
+                FROM users u
+                JOIN scores s ON u.id = s.user_id
+                GROUP BY u.id, u.username
+                ORDER BY best_score DESC
+            )
+            SELECT 
+                username,
+                games_played,
+                best_score,
+                ROUND(avg_score, 1) as avg_score
+            FROM PlayerStats
+        """)
+        
+        rows = c.fetchall()
+        
+        if not rows:
+            return {
+                "players": [],
+                "message": "Нет данных о играх"
+            }
+        
+        players_stats = []
+        for username, games_played, best_score, avg_score in rows:
+            players_stats.append({
+                "username": username,
+                "games_played": games_played,
+                "best_score": best_score,
+                "average_score": float(avg_score)
+            })
+        
+        return {
+            "players": players_stats
+        }
+        
+    except Exception as e:
+        print(f"Error in get_user_stats: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        if 'conn' in locals():
+            conn.close()
 
 if __name__ == "__main__":
     import uvicorn

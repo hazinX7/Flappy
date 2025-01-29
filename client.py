@@ -158,11 +158,16 @@ class FlappyBird:
             self.save_score()
             self.update_leaderboard()
             
-            if self.game_over_screen():
+            result = self.game_over_screen()
+            if result == "restart":
                 self.reset_game()
                 continue
+            elif result == "profile":
+                pygame.quit()
+                return "profile"
             else:
-                break
+                pygame.quit()
+                return "quit"
 
     def game_loop(self):
         for event in pygame.event.get():
@@ -346,78 +351,80 @@ class FlappyBird:
                     sys.exit()
                 elif event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_RETURN:
-                        return True
+                        return "restart"
                     elif event.key == pygame.K_ESCAPE:
-                        pygame.quit()
-                        sys.exit()
+                        return "quit"
+                    elif event.key == pygame.K_TAB:
+                        return "profile"
 
             self.screen.fill((255, 255, 255))
             self.screen.blit(self.background, (0, 0))
 
             # Шрифты
-            title_font = pygame.font.SysFont("Arial", 50)
+            title_font = pygame.font.SysFont("Arial", 45)
             font = pygame.font.SysFont("Arial", 30)
+            small_font = pygame.font.SysFont("Arial", 25)
 
-            # Тексты
+            # Отрисовка заголовка и счета
             game_over = title_font.render("ИГРА ОКОНЧЕНА!", True, (255, 255, 255))
             score = font.render(f"ВАШ СЧЁТ: {self.counter}", True, (255, 255, 255))
-            leaderboard_title = font.render("ТАБЛИЦА ЛИДЕРОВ", True, (255, 255, 255))
-            continue_text = font.render("ENTER - НОВАЯ ИГРА", True, (255, 255, 255))
-            exit_text = font.render("ESC - ВЫХОД", True, (255, 255, 255))
-
-            # Позиционирование с увеличенными отступами
+            
             game_over_rect = game_over.get_rect(centerx=self.screen.get_width() // 2, y=50)
             score_rect = score.get_rect(centerx=self.screen.get_width() // 2, y=120)
-            leaderboard_rect = leaderboard_title.get_rect(centerx=self.screen.get_width() // 2, y=200)
-
-            # Отрисовка заголовков
+            
             self.screen.blit(game_over, game_over_rect)
             self.screen.blit(score, score_rect)
+
+            # Отрисовка таблицы лидеров с меньшим отступом
+            leaderboard_title = small_font.render("ТАБЛИЦА ЛИДЕРОВ", True, (255, 255, 255))
+            leaderboard_rect = leaderboard_title.get_rect(centerx=self.screen.get_width() // 2, y=200)  # Уменьшен отступ
             self.screen.blit(leaderboard_title, leaderboard_rect)
 
-            # Отображение результатов таблицы лидеров
-            y = 250  # Увеличиваем начальную позицию для записей таблицы лидеров
-            if not self.leaderboard_data:
-                text = font.render("Нет рекордов", True, (255, 255, 255))
-                text_rect = text.get_rect(centerx=self.screen.get_width() // 2, y=y)
-                self.screen.blit(text, text_rect)
-            else:
+            # Отображение результатов
+            y = 250  # Уменьшен начальный отступ для записей
+            if self.leaderboard_data:
                 for item in self.leaderboard_data:
-                    position = item["position"]
-                    if position <= 3:
-                        # Отрисовка медали
-                        medal = self.medals[position - 1]
+                    if item["position"] <= 3:
+                        # Медаль
+                        medal = self.medals[item["position"] - 1]
                         medal_rect = medal.get_rect(
                             right=self.screen.get_width() // 2 - 70,
-                            centery=y + 15
+                            centery=y
                         )
                         self.screen.blit(medal, medal_rect)
                         
-                        # Отрисовка имени игрока
-                        name_text = font.render(item['username'], True, (255, 255, 255))
-                        name_rect = name_text.get_rect(
+                        # Имя игрока
+                        name = small_font.render(item['username'], True, (255, 255, 255))
+                        name_rect = name.get_rect(
                             centerx=self.screen.get_width() // 2 - 20,
-                            centery=y + 15
+                            centery=y
                         )
-                        self.screen.blit(name_text, name_rect)
+                        self.screen.blit(name, name_rect)
                         
-                        # Отрисовка счета
-                        score_text = font.render(str(item['score']), True, (255, 255, 255))
-                        score_rect = score_text.get_rect(
+                        # Счет
+                        score = small_font.render(str(item['score']), True, (255, 255, 255))
+                        score_rect = score_rect = score.get_rect(
                             left=name_rect.right + 20,
-                            centery=y + 15
+                            centery=y
                         )
-                        self.screen.blit(score_text, score_rect)
+                        self.screen.blit(score, score_rect)
                         
-                        y += 50  # Увеличиваем отступ между записями
+                        y += 40
 
-            # Отрисовка кнопок внизу
-            continue_rect = continue_text.get_rect(centerx=self.screen.get_width() // 2, y=550)
-            exit_rect = exit_text.get_rect(centerx=self.screen.get_width() // 2, y=600)
-            
+            # Кнопки внизу (увеличены отступы)
+            continue_text = font.render("ENTER - НОВАЯ ИГРА", True, (255, 255, 255))
+            profile_text = font.render("TAB - ВЕРНУТЬСЯ В ПРОФИЛЬ", True, (255, 255, 255))
+            exit_text = font.render("ESC - ВЫХОД", True, (255, 255, 255))
+
+            # Увеличены значения y для кнопок
+            continue_rect = continue_text.get_rect(centerx=self.screen.get_width() // 2, y=580)
+            profile_rect = profile_text.get_rect(centerx=self.screen.get_width() // 2, y=620)
+            exit_rect = exit_text.get_rect(centerx=self.screen.get_width() // 2, y=660)
+
             self.screen.blit(continue_text, continue_rect)
+            self.screen.blit(profile_text, profile_rect)
             self.screen.blit(exit_text, exit_rect)
-            
+
             pygame.display.update()
             clock.tick(60)
 
@@ -521,7 +528,6 @@ class AuthApp:
         username = self.username_entry.get()
         password = self.password_entry.get()
         
-        # Проверка на пустые поля
         if not username or not password:
             messagebox.showerror("Ошибка", "Пожалуйста, заполните все поля")
             return
@@ -534,9 +540,9 @@ class AuthApp:
             
             if response.status_code == 200:
                 self.token = response.json().get("token")
-                messagebox.showinfo("Успех", f"Добро пожаловать, {username}!")
                 self.root.destroy()
-                self.start_game()
+                # Вместо прямого запуска игры открываем окно профиля
+                ProfileWindow(self.token, username).run()
             elif response.status_code == 401:
                 messagebox.showerror("Ошибка", "Неверный логин или пароль")
             else:
@@ -713,7 +719,14 @@ class AuthApp:
             
             if response.status_code == 200:
                 game = FlappyBird(self.token)
-                game.run()  # Теперь просто запускаем игру
+                result = game.run()
+                
+                if result == "profile":
+                    # Возвращаемся в профиль
+                    ProfileWindow(self.token, self.username).run()
+                elif result == "quit":
+                    # Выходим из игры в окно авторизации
+                    AuthApp().run()
             else:
                 error_message = response.json().get("detail", "Неизвестная ошибка")
                 messagebox.showerror("Ошибка", f"Ошибка авторизации: {error_message}")
@@ -723,6 +736,263 @@ class AuthApp:
         except requests.RequestException as e:
             messagebox.showerror("Ошибка", f"Ошибка проверки токена: {str(e)}")
             return
+
+    def run(self):
+        self.root.mainloop()
+
+class ProfileWindow:
+    def __init__(self, token, username):
+        self.root = tk.Tk()
+        self.root.title("Flappy Bird - Личный кабинет")
+        self.root.geometry("500x600")
+        self.root.resizable(False, False)
+        
+        # Центрирование окна
+        screen_width = self.root.winfo_screenwidth()
+        screen_height = self.root.winfo_screenheight()
+        x = (screen_width - 500) // 2
+        y = (screen_height - 600) // 2
+        self.root.geometry(f"500x600+{x}+{y}")
+        
+        self.token = token
+        self.username = username
+        
+        # Основной контейнер
+        main_frame = tk.Frame(self.root, padx=50, pady=30)
+        main_frame.pack(expand=True, fill='both')
+        
+        # Заголовок с приветствием
+        title_label = tk.Label(
+            main_frame,
+            text=f"Добро пожаловать, {username}!",
+            font=("Arial", 24, "bold"),
+            pady=30
+        )
+        title_label.pack()
+        
+        # Кнопки
+        buttons_frame = tk.Frame(main_frame)
+        buttons_frame.pack(pady=20)
+        
+        # Кнопка начала игры
+        play_btn = tk.Button(
+            buttons_frame,
+            text="Начать игру",
+            command=self.start_game,
+            width=20,
+            font=("Arial", 14),
+            bg="#4CAF50",
+            fg="white",
+            relief=tk.RAISED,
+            cursor="hand2"
+        )
+        play_btn.pack(pady=10)
+        
+        # Кнопка смены пароля
+        change_pass_btn = tk.Button(
+            buttons_frame,
+            text="Сменить пароль",
+            command=self.change_password,
+            width=20,
+            font=("Arial", 14),
+            bg="#2196F3",
+            fg="white",
+            relief=tk.RAISED,
+            cursor="hand2"
+        )
+        change_pass_btn.pack(pady=10)
+        
+        # Кнопка просмотра статистики
+        stats_btn = tk.Button(
+            buttons_frame,
+            text="Общая статистика",
+            command=self.show_statistics,
+            width=20,
+            font=("Arial", 14),
+            bg="#FF9800",
+            fg="white",
+            relief=tk.RAISED,
+            cursor="hand2"
+        )
+        stats_btn.pack(pady=10)
+        
+        # Кнопка выхода
+        exit_btn = tk.Button(
+            buttons_frame,
+            text="Выйти",
+            command=self.logout,
+            width=20,
+            font=("Arial", 14),
+            bg="#f44336",
+            fg="white",
+            relief=tk.RAISED,
+            cursor="hand2"
+        )
+        exit_btn.pack(pady=10)
+
+    def start_game(self):
+        self.root.destroy()
+        game = FlappyBird(self.token)
+        result = game.run()
+        
+        if result == "profile":
+            # Возвращаемся в профиль
+            ProfileWindow(self.token, self.username).run()
+        elif result == "quit":
+            # Выходим из игры в окно авторизации
+            AuthApp().run()
+
+    def change_password(self):
+        change_window = tk.Toplevel(self.root)
+        change_window.title("Смена пароля")
+        change_window.geometry("400x300")
+        change_window.resizable(False, False)
+        
+        # Центрирование окна
+        screen_width = change_window.winfo_screenwidth()
+        screen_height = change_window.winfo_screenheight()
+        x = (screen_width - 400) // 2
+        y = (screen_height - 300) // 2
+        change_window.geometry(f"400x300+{x}+{y}")
+        
+        frame = tk.Frame(change_window, padx=40, pady=20)
+        frame.pack(expand=True, fill='both')
+        
+        tk.Label(frame, text="Текущий пароль:", font=("Arial", 12)).pack()
+        current_pass = tk.Entry(frame, show="•", font=("Arial", 12))
+        current_pass.pack(pady=(5, 15))
+        
+        tk.Label(frame, text="Новый пароль:", font=("Arial", 12)).pack()
+        new_pass = tk.Entry(frame, show="•", font=("Arial", 12))
+        new_pass.pack(pady=(5, 15))
+        
+        tk.Label(frame, text="Подтвердите пароль:", font=("Arial", 12)).pack()
+        confirm_pass = tk.Entry(frame, show="•", font=("Arial", 12))
+        confirm_pass.pack(pady=(5, 15))
+        
+        def submit_change():
+            current = current_pass.get()
+            new = new_pass.get()
+            confirm = confirm_pass.get()
+            
+            if not current or not new or not confirm:
+                messagebox.showerror("Ошибка", "Пожалуйста, заполните все поля")
+                return
+            
+            if new != confirm:
+                messagebox.showerror("Ошибка", "Новые пароли не совпадают")
+                return
+            
+            if len(new) < 4:
+                messagebox.showerror("Ошибка", "Новый пароль должен содержать минимум 4 символа")
+                return
+            
+            try:
+                headers = {
+                    "Authorization": f"Bearer {self.token}",
+                    "Content-Type": "application/json"
+                }
+                response = requests.post(
+                    "http://127.0.0.1:8001/change-password",
+                    json={
+                        "current_password": current,
+                        "new_password": new
+                    },
+                    headers=headers
+                )
+                
+                if response.status_code == 200:
+                    messagebox.showinfo("Успех", "Пароль успешно изменен")
+                    change_window.destroy()
+                elif response.status_code == 400:
+                    messagebox.showerror("Ошибка", "Неверный текущий пароль")
+                else:
+                    messagebox.showerror("Ошибка", "Не удалось изменить пароль")
+                
+            except requests.RequestException:
+                messagebox.showerror(
+                    "Ошибка",
+                    "Не удалось подключиться к серверу"
+                )
+        
+        submit_btn = tk.Button(
+            frame,
+            text="Сменить пароль",
+            command=submit_change,
+            font=("Arial", 12),
+            bg="#4CAF50",
+            fg="white"
+        )
+        submit_btn.pack(pady=20)
+
+    def show_statistics(self):
+        try:
+            headers = {"Authorization": f"Bearer {self.token}"}
+            response = requests.get(
+                "http://127.0.0.1:8001/user-stats",
+                headers=headers
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                if not data["players"]:
+                    stats_text = "Нет данных о играх"
+                else:
+                    # Формируем заголовок таблицы
+                    stats_text = "Игрок | Игр | Лучший | Средний\n"
+                    stats_text += "-" * 40 + "\n"
+                    
+                    # Добавляем данные по каждому игроку
+                    for player in data["players"]:
+                        stats_text += f"{player['username']:<15} | "
+                        stats_text += f"{player['games_played']:<4} | "
+                        stats_text += f"{player['best_score']:<7} | "
+                        stats_text += f"{player['average_score']:.1f}\n"
+            else:
+                stats_text = "Не удалось загрузить статистику"
+            
+        except requests.RequestException:
+            stats_text = "Ошибка подключения к серверу"
+        
+        stats_window = tk.Toplevel(self.root)
+        stats_window.title("Общая статистика")
+        stats_window.geometry("500x400")  # Увеличил размер окна
+        stats_window.resizable(False, False)
+        
+        # Центрирование окна
+        screen_width = stats_window.winfo_screenwidth()
+        screen_height = stats_window.winfo_screenheight()
+        x = (screen_width - 500) // 2
+        y = (screen_height - 400) // 2
+        stats_window.geometry(f"500x400+{x}+{y}")
+        
+        frame = tk.Frame(stats_window, padx=40, pady=20)
+        frame.pack(expand=True, fill='both')
+        
+        tk.Label(
+            frame,
+            text="Статистика игроков",
+            font=("Arial", 16, "bold")
+        ).pack(pady=20)
+        
+        # Используем текстовое поле с моноширинным шрифтом для лучшего выравнивания
+        text_widget = tk.Text(
+            frame,
+            font=("Courier New", 12),
+            height=15,
+            width=40,
+            wrap=tk.NONE,
+            bg=frame.cget("bg"),
+            relief=tk.FLAT
+        )
+        text_widget.insert("1.0", stats_text)
+        text_widget.configure(state='disabled')  # Делаем только для чтения
+        text_widget.pack(pady=10)
+
+    def logout(self):
+        if messagebox.askyesno("Выход", "Вы уверены, что хотите выйти?"):
+            self.root.destroy()
+            AuthApp().run()
 
     def run(self):
         self.root.mainloop()
