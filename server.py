@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException, Depends, Header, status
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import jwt
 import hashlib
 from typing import Optional
@@ -240,29 +240,14 @@ async def save_score(score_data: ScoreCreate, authorization: Optional[str] = Hea
         conn = sqlite3.connect(DATABASE_FILE)
         c = conn.cursor()
         
-        # Проверка лучшего результата пользователя
+        # Сохраняем каждый результат игры
+        current_time = datetime.now(timezone.utc).isoformat()
         c.execute('''
-            SELECT score FROM scores 
-            WHERE user_id = ? 
-            ORDER BY score DESC 
-            LIMIT 1
-        ''', (user_id,))
-        best_score = c.fetchone()
-        
-        # Сохранение только если это лучший результат
-        if not best_score or score_data.score > best_score[0]:
-            c.execute('''
-                DELETE FROM scores 
-                WHERE user_id = ?
-            ''', (user_id,))
+            INSERT INTO scores (user_id, score, created_at)
+            VALUES (?, ?, ?)
+        ''', (user_id, score_data.score, current_time))
             
-            c.execute('''
-                INSERT INTO scores (user_id, score, created_at)
-                VALUES (?, ?, ?)
-            ''', (user_id, score_data.score, datetime.utcnow().isoformat()))
-            
-            conn.commit()
-        
+        conn.commit()
         return {"success": True}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -359,7 +344,7 @@ async def get_user_stats():
         conn = sqlite3.connect(DATABASE_FILE)
         c = conn.cursor()
         
-        # Получаем статистику по каждому игроку
+        # Получаем полную статистику по каждому игроку
         c.execute("""
             WITH PlayerStats AS (
                 SELECT 
@@ -370,14 +355,32 @@ async def get_user_stats():
                 FROM users u
                 JOIN scores s ON u.id = s.user_id
                 GROUP BY u.id, u.username
-                ORDER BY best_score DESC
+            ),
+            LastScores AS (
+                SELECT 
+                    u.username,
+                    s.score,
+                    s.created_at,
+                    ROW_NUMBER() OVER (PARTITION BY u.id ORDER BY s.created_at DESC) as rn
+                FROM users u
+                JOIN scores s ON u.id = s.user_id
             )
             SELECT 
-                username,
-                games_played,
-                best_score,
-                ROUND(avg_score, 1) as avg_score
-            FROM PlayerStats
+                p.username,
+                p.games_played,
+                p.best_score,
+                ROUND(p.avg_score, 1) as avg_score,
+                GROUP_CONCAT(
+                    CASE WHEN l.rn <= 5 THEN l.score END
+                ) as last_five_scores
+            FROM PlayerStats p
+            LEFT JOIN LastScores l ON p.username = l.username
+            GROUP BY 
+                p.username, 
+                p.games_played, 
+                p.best_score, 
+                p.avg_score
+            ORDER BY p.best_score DESC
         """)
         
         rows = c.fetchall()
@@ -389,12 +392,18 @@ async def get_user_stats():
             }
         
         players_stats = []
-        for username, games_played, best_score, avg_score in rows:
+        for username, games_played, best_score, avg_score, last_scores in rows:
+            # Преобразуем строку последних результатов в список
+            last_scores_list = []
+            if last_scores:
+                last_scores_list = [int(s) for s in last_scores.split(',') if s][:5]
+            
             players_stats.append({
                 "username": username,
                 "games_played": games_played,
                 "best_score": best_score,
-                "average_score": float(avg_score)
+                "average_score": float(avg_score),
+                "last_scores": last_scores_list
             })
         
         return {
@@ -403,6 +412,36 @@ async def get_user_stats():
         
     except Exception as e:
         print(f"Error in get_user_stats: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        if 'conn' in locals():
+            conn.close()
+
+@app.delete("/delete-account")
+async def delete_account(authorization: Optional[str] = Header(None)):
+    if not authorization:
+        raise HTTPException(status_code=401, detail="Authorization header missing")
+
+    if not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Invalid authorization format")
+
+    try:
+        token = authorization.split(" ")[1]
+        user_id = verify_token(token)
+        
+        conn = sqlite3.connect(DATABASE_FILE)
+        c = conn.cursor()
+        
+        # Удаляем все результаты пользователя
+        c.execute("DELETE FROM scores WHERE user_id = ?", (user_id,))
+        
+        # Удаляем самого пользователя
+        c.execute("DELETE FROM users WHERE id = ?", (user_id,))
+        
+        conn.commit()
+        return {"message": "Account successfully deleted"}
+        
+    except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     finally:
         if 'conn' in locals():

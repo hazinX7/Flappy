@@ -9,7 +9,6 @@ class FlappyBird:
         self.screen = pygame.display.set_mode((400, 708))
         self.bird = pygame.Rect(65, 50, 50, 50)
         
-        # Загрузка изображений
         self.background = pygame.image.load("./assets/background.png").convert()
         self.birdSprites = [
             pygame.image.load("./assets/1.png").convert_alpha(),
@@ -19,7 +18,6 @@ class FlappyBird:
         self.wallUp = pygame.image.load("./assets/bottom.png").convert_alpha()
         self.wallDown = pygame.image.load("./assets/top.png").convert_alpha()
         
-        # Загрузка медалей
         self.medals = [
             pygame.image.load("./assets/first.png").convert_alpha(),
             pygame.image.load("./assets/second.png").convert_alpha(),
@@ -27,7 +25,6 @@ class FlappyBird:
         ]
         self.medals = [pygame.transform.scale(medal, (30, 30)) for medal in self.medals]
         
-        # Инициализация игровых параметров
         self.gap = 130
         self.gapx = 50
         self.wallx = 400
@@ -60,7 +57,6 @@ class FlappyBird:
             self.gravity += 0.2
         self.bird[1] = self.birdY
         
-        # Проверка столкновений
         upRect = pygame.Rect(
             self.wallx,
             360 + self.gapx - self.offset + 10,
@@ -82,7 +78,7 @@ class FlappyBird:
 
     def show_menu(self):
         clock = pygame.time.Clock()
-        font = pygame.font.SysFont("Arial", 30)  # Увеличим размер шрифта
+        font = pygame.font.SysFont("Arial", 30)
 
         while True:
             for event in pygame.event.get():
@@ -95,7 +91,6 @@ class FlappyBird:
             self.screen.fill((255, 255, 255))
             self.screen.blit(self.background, (0, 0))
 
-            # Отрисовка текста по центру экрана
             text = font.render("ENTER - НОВАЯ ИГРА", True, (255, 255, 255))
             text_rect = text.get_rect(center=(self.screen.get_width() // 2, self.screen.get_height() // 2))
             self.screen.blit(text, text_rect)
@@ -143,9 +138,6 @@ class FlappyBird:
             pygame.display.update()
 
     def update_leaderboard(self):
-        """Только получает данные таблицы лидеров, без отрисовки"""
-        # Здесь должен быть код для получения данных таблицы лидеров
-        # self.leaderboard_data = [...] # получение данных с сервера
         pass
 
     def game_over_screen(self):
@@ -165,27 +157,22 @@ class FlappyBird:
                     elif event.key == pygame.K_TAB:
                         return "profile"
 
-            # Очищаем экран и рисуем фон
             self.screen.fill((255, 255, 255))
             self.screen.blit(self.background, (0, 0))
 
-            # Шрифты
             title_font = pygame.font.SysFont("Arial", 40)
             font = pygame.font.SysFont("Arial", 30)
 
-            # Только основные надписи
             game_over = title_font.render("ИГРА ОКОНЧЕНА!", True, (255, 255, 255))
             score = font.render(f"ВАШ СЧЁТ: {self.counter}", True, (255, 255, 255))
             enter_text = font.render("ENTER - НОВАЯ ИГРА", True, (255, 255, 255))
             exit_text = font.render("ESC - ВЫХОД", True, (255, 255, 255))
 
-            # Позиционирование
             game_over_rect = game_over.get_rect(centerx=self.screen.get_width() // 2, y=50)
             score_rect = score.get_rect(centerx=self.screen.get_width() // 2, y=150)
             enter_rect = enter_text.get_rect(centerx=self.screen.get_width() // 2, y=500)
             exit_rect = exit_text.get_rect(centerx=self.screen.get_width() // 2, y=550)
 
-            # Отрисовка
             self.screen.blit(game_over, game_over_rect)
             self.screen.blit(score, score_rect)
             self.screen.blit(enter_text, enter_rect)
@@ -208,20 +195,16 @@ class FlappyBird:
         self.show_menu()
         
         while True:
-            # Игровой цикл
             while not self.dead:
                 self.game_loop()
                 clock.tick(60)
             
-            # После смерти птицы
             self.sprite = 2
             self.screen.blit(self.birdSprites[self.sprite], (70, self.birdY))
             pygame.display.update()
             
-            # Сохраняем результат
             self.save_score()
             
-            # Показываем экран окончания игры
             result = self.game_over_screen()
             if result == "restart":
                 self.reset_game()

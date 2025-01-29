@@ -5,6 +5,7 @@ import requests
 import random
 import pygame
 import sys
+import time
 
 class FlappyBird:
     def __init__(self, token):
@@ -58,7 +59,6 @@ class FlappyBird:
 
     def save_score(self):
         try:
-            # Проверяем наличие токена
             if not self.token:
                 print("Error: No authentication token")
                 return
@@ -68,17 +68,19 @@ class FlappyBird:
                 "Content-Type": "application/json"
             }
             
-            # Отправляем счет как JSON
-            data = {"score": self.counter}
+            data = {
+                "score": self.counter,
+                "timestamp": int(time.time())
+            }
             response = requests.post(
                 "http://127.0.0.1:8001/scores",
-                json=data,  # Изменяем params на json
+                json=data,
                 headers=headers
             )
             
-            print(f"Score saved response: {response.status_code}, {response.text}")
             if response.status_code != 200:
                 print(f"Error saving score: {response.json()}")
+            
         except requests.RequestException as e:
             print(f"Error saving score: {e}")
 
@@ -86,32 +88,27 @@ class FlappyBird:
         font = pygame.font.SysFont("Arial", 25)
         y = 50
         
-        # Заголовок таблицы
         title = font.render("ТАБЛИЦА ЛИДЕРОВ", True, (255, 255, 255))
         title_rect = title.get_rect(centerx=self.screen.get_width() // 2, y=y)
         self.screen.blit(title, title_rect)
         y += 50
         
-        # Если данных нет
         if not self.leaderboard_data:
             text = font.render("Нет рекордов", True, (255, 255, 255))
             text_rect = text.get_rect(centerx=self.screen.get_width() // 2, y=y)
             self.screen.blit(text, text_rect)
             return
         
-        # Отображение результатов
         for item in self.leaderboard_data:
             position = item["position"]
             if position <= 3:
-                # Отрисовка медали
                 medal = self.medals[position - 1]
                 medal_rect = medal.get_rect(
-                    right=self.screen.get_width() // 2 - 70,  # Позиция медали слева от имени
-                    centery=y + 15  # Центрируем медаль по вертикали
+                    right=self.screen.get_width() // 2 - 70,
+                    centery=y + 15
                 )
                 self.screen.blit(medal, medal_rect)
                 
-                # Отрисовка имени игрока
                 name_text = font.render(item['username'], True, (255, 255, 255))
                 name_rect = name_text.get_rect(
                     centerx=self.screen.get_width() // 2 - 20,
@@ -119,7 +116,6 @@ class FlappyBird:
                 )
                 self.screen.blit(name_text, name_rect)
                 
-                # Отрисовка счета
                 score_text = font.render(str(item['score']), True, (255, 255, 255))
                 score_rect = score_text.get_rect(
                     left=name_rect.right + 20,
@@ -127,10 +123,9 @@ class FlappyBird:
                 )
                 self.screen.blit(score_text, score_rect)
                 
-                y += 40  # Увеличиваем отступ для следующей записи
+                y += 40
 
     def reset_game(self):
-        # Сбрасываем все параметры игры
         self.birdY = 350
         self.wallx = 400
         self.jump = 0
@@ -211,7 +206,6 @@ class FlappyBird:
         if self.show_leaderboard:
             self.draw_leaderboard()
         else:
-            # Обновление позиции труб
             self.wallx -= 2
             if self.wallx < -80:
                 self.wallx = 400
@@ -230,7 +224,7 @@ class FlappyBird:
 
     def show_game_over(self):
         clock = pygame.time.Clock()
-        self.update_leaderboard()  # Обновляем таблицу лидеров сразу
+        self.update_leaderboard()
         
         while True:
             for event in pygame.event.get():
@@ -247,32 +241,26 @@ class FlappyBird:
             self.screen.fill((255, 255, 255))
             self.screen.blit(self.background, (0, 0))
             
-            # Шрифты
             title_font = pygame.font.SysFont("Arial", 50)
             font = pygame.font.SysFont("Arial", 30)
             
-            # Тексты
             game_over = title_font.render("ИГРА ОКОНЧЕНА!", True, (255, 255, 255))
             score = font.render(f"ВАШ СЧЁТ: {self.counter}", True, (255, 255, 255))
             continue_text = font.render("ENTER - НОВАЯ ИГРА", True, (255, 255, 255))
             exit_text = font.render("ESC - ВЫХОД", True, (255, 255, 255))
             
-            # Позиционирование (изменяем координаты y)
             game_over_rect = game_over.get_rect(centerx=self.screen.get_width() // 2, y=50)
             score_rect = score.get_rect(centerx=self.screen.get_width() // 2, y=120)
             
-            # Отрисовка заголовка и счета
             self.screen.blit(game_over, game_over_rect)
             self.screen.blit(score, score_rect)
             
-            # Отрисовка таблицы лидеров со смещенной позицией y
             font = pygame.font.SysFont("Arial", 25)
             leaderboard_title = font.render("ТАБЛИЦА ЛИДЕРОВ", True, (255, 255, 255))
             leaderboard_rect = leaderboard_title.get_rect(centerx=self.screen.get_width() // 2, y=200)
             self.screen.blit(leaderboard_title, leaderboard_rect)
             
-            # Отображение результатов таблицы лидеров
-            y = 250  # Начальная позиция для записей таблицы лидеров
+            y = 250
             if not self.leaderboard_data:
                 text = font.render("Нет рекордов", True, (255, 255, 255))
                 text_rect = text.get_rect(centerx=self.screen.get_width() // 2, y=y)
@@ -281,15 +269,13 @@ class FlappyBird:
                 for item in self.leaderboard_data:
                     position = item["position"]
                     if position <= 3:
-                        # Отрисовка медали
                         medal = self.medals[position - 1]
                         medal_rect = medal.get_rect(
-                            right=self.screen.get_width() // 2 - 70,  # Позиция медали слева от имени
-                            centery=y + 15  # Центрируем медаль по вертикали
+                            right=self.screen.get_width() // 2 - 70,
+                            centery=y + 15
                         )
                         self.screen.blit(medal, medal_rect)
                         
-                        # Отрисовка имени игрока
                         name_text = font.render(item['username'], True, (255, 255, 255))
                         name_rect = name_text.get_rect(
                             centerx=self.screen.get_width() // 2 - 20,
@@ -297,7 +283,6 @@ class FlappyBird:
                         )
                         self.screen.blit(name_text, name_rect)
                         
-                        # Отрисовка счета
                         score_text = font.render(str(item['score']), True, (255, 255, 255))
                         score_rect = score_text.get_rect(
                             left=name_rect.right + 20,
@@ -305,9 +290,8 @@ class FlappyBird:
                         )
                         self.screen.blit(score_text, score_rect)
                         
-                        y += 40  # Увеличиваем отступ для следующей записи
+                        y += 40
             
-            # Отрисовка кнопок внизу
             continue_rect = continue_text.get_rect(centerx=self.screen.get_width() // 2, y=550)
             exit_rect = exit_text.get_rect(centerx=self.screen.get_width() // 2, y=600)
             
@@ -360,12 +344,10 @@ class FlappyBird:
             self.screen.fill((255, 255, 255))
             self.screen.blit(self.background, (0, 0))
 
-            # Шрифты
             title_font = pygame.font.SysFont("Arial", 45)
             font = pygame.font.SysFont("Arial", 30)
             small_font = pygame.font.SysFont("Arial", 25)
 
-            # Отрисовка заголовка и счета
             game_over = title_font.render("ИГРА ОКОНЧЕНА!", True, (255, 255, 255))
             score = font.render(f"ВАШ СЧЁТ: {self.counter}", True, (255, 255, 255))
             
@@ -375,17 +357,14 @@ class FlappyBird:
             self.screen.blit(game_over, game_over_rect)
             self.screen.blit(score, score_rect)
 
-            # Отрисовка таблицы лидеров с меньшим отступом
             leaderboard_title = small_font.render("ТАБЛИЦА ЛИДЕРОВ", True, (255, 255, 255))
-            leaderboard_rect = leaderboard_title.get_rect(centerx=self.screen.get_width() // 2, y=200)  # Уменьшен отступ
+            leaderboard_rect = leaderboard_title.get_rect(centerx=self.screen.get_width() // 2, y=200)
             self.screen.blit(leaderboard_title, leaderboard_rect)
 
-            # Отображение результатов
-            y = 250  # Уменьшен начальный отступ для записей
+            y = 250
             if self.leaderboard_data:
                 for item in self.leaderboard_data:
                     if item["position"] <= 3:
-                        # Медаль
                         medal = self.medals[item["position"] - 1]
                         medal_rect = medal.get_rect(
                             right=self.screen.get_width() // 2 - 70,
@@ -393,7 +372,6 @@ class FlappyBird:
                         )
                         self.screen.blit(medal, medal_rect)
                         
-                        # Имя игрока
                         name = small_font.render(item['username'], True, (255, 255, 255))
                         name_rect = name.get_rect(
                             centerx=self.screen.get_width() // 2 - 20,
@@ -401,7 +379,6 @@ class FlappyBird:
                         )
                         self.screen.blit(name, name_rect)
                         
-                        # Счет
                         score = small_font.render(str(item['score']), True, (255, 255, 255))
                         score_rect = score_rect = score.get_rect(
                             left=name_rect.right + 20,
@@ -411,12 +388,10 @@ class FlappyBird:
                         
                         y += 40
 
-            # Кнопки внизу (увеличены отступы)
             continue_text = font.render("ENTER - НОВАЯ ИГРА", True, (255, 255, 255))
             profile_text = font.render("TAB - ВЕРНУТЬСЯ В ПРОФИЛЬ", True, (255, 255, 255))
             exit_text = font.render("ESC - ВЫХОД", True, (255, 255, 255))
 
-            # Увеличены значения y для кнопок
             continue_rect = continue_text.get_rect(centerx=self.screen.get_width() // 2, y=580)
             profile_rect = profile_text.get_rect(centerx=self.screen.get_width() // 2, y=620)
             exit_rect = exit_text.get_rect(centerx=self.screen.get_width() // 2, y=660)
@@ -428,40 +403,123 @@ class FlappyBird:
             pygame.display.update()
             clock.tick(60)
 
+    def show_statistics(self):
+        try:
+            headers = {"Authorization": f"Bearer {self.token}"}
+            response = requests.get(
+                "http://127.0.0.1:8001/user-stats",
+                headers=headers
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                if not data["players"]:
+                    stats_text = "Нет данных о играх"
+                else:
+                    stats_text = "Статистика игроков:\n"
+                    stats_text += "-" * 60 + "\n"
+                    stats_text += f"{'Игрок':<15} | {'Игр':^4} | {'Лучший':^7} | {'Средний':^7} | {'Последние 5':<15}\n"
+                    stats_text += "-" * 60 + "\n"
+                    
+                    total_games = 0
+                    global_best = 0
+                    all_scores = []
+                    
+                    for player in data["players"]:
+                        last_scores = player.get('last_scores', [])
+                        last_scores_str = ", ".join(map(str, last_scores[:5]))
+                        if not last_scores_str:
+                            last_scores_str = "[]"
+                        
+                        stats_text += f"{player['username']:<15} | "
+                        stats_text += f"{player['games_played']:^4} | "
+                        stats_text += f"{player['best_score']:^7} | "
+                        stats_text += f"{player['average_score']:^7.1f} | "
+                        stats_text += f"[{last_scores_str}]\n"
+                        
+                        total_games += player['games_played']
+                        global_best = max(global_best, player['best_score'])
+                        if player.get('last_scores'):
+                            all_scores.extend(player['last_scores'])
+                    
+                    stats_text += "\nОбщая статистика:\n"
+                    stats_text += "-" * 30 + "\n"
+                    stats_text += f"Всего игр: {total_games}\n"
+                    stats_text += f"Лучший результат: {global_best}\n"
+                    if all_scores:
+                        global_average = sum(all_scores) / len(all_scores)
+                        stats_text += f"Средний результат: {global_average:.1f}\n"
+                    else:
+                        stats_text += "Средний результат: 0\n"
+            else:
+                stats_text = "Не удалось загрузить статистику"
+            
+        except requests.RequestException:
+            stats_text = "Ошибка подключения к серверу"
+        except Exception as e:
+            stats_text = f"Ошибка при обработке данных: {str(e)}"
+        
+        stats_window = tk.Toplevel(self.root)
+        stats_window.title("Общая статистика")
+        stats_window.geometry("700x500")
+        stats_window.resizable(False, False)
+        
+        screen_width = stats_window.winfo_screenwidth()
+        screen_height = stats_window.winfo_screenheight()
+        x = (screen_width - 700) // 2
+        y = (screen_height - 500) // 2
+        stats_window.geometry(f"700x500+{x}+{y}")
+        
+        frame = tk.Frame(stats_window, padx=40, pady=20)
+        frame.pack(expand=True, fill='both')
+        
+        tk.Label(
+            frame,
+            text="Статистика игроков",
+            font=("Arial", 16, "bold")
+        ).pack(pady=20)
+        
+        text_widget = tk.Text(
+            frame,
+            font=("Courier New", 12),
+            height=20,
+            width=70,
+            wrap=tk.NONE,
+            bg=frame.cget("bg"),
+            relief=tk.FLAT
+        )
+        text_widget.insert("1.0", stats_text)
+        text_widget.configure(state='disabled')
+        text_widget.pack(pady=10)
+
 class AuthApp:
     def __init__(self):
-        # Настройка главного окна
         self.root = tk.Tk()
         self.root.title("Flappy Bird - Авторизация")
         self.root.geometry("500x600")
         self.root.resizable(False, False)
         
-        # Центрирование окна
         screen_width = self.root.winfo_screenwidth()
         screen_height = self.root.winfo_screenheight()
         x = (screen_width - 500) // 2
         y = (screen_height - 600) // 2
         self.root.geometry(f"500x600+{x}+{y}")
         
-        # Создание интерфейса
         main_frame = tk.Frame(self.root, padx=50, pady=30)
         main_frame.pack(expand=True, fill='both')
         
-        # Заголовок с измененными параметрами
         title_label = tk.Label(
             main_frame, 
             text="Добро пожаловать\nв Flappy Bird!", 
-            font=("Arial", 24, "bold"),  # Увеличиваем размер шрифта
+            font=("Arial", 24, "bold"),
             pady=30,
-            justify=tk.CENTER  # Центрируем текст
+            justify=tk.CENTER
         )
         title_label.pack()
         
-        # Создаем рамку для формы
         form_frame = tk.Frame(main_frame, pady=20)
         form_frame.pack()
         
-        # Поля ввода
         tk.Label(form_frame, text="Логин:", font=("Arial", 12)).pack()
         self.username_entry = tk.Entry(
             form_frame, 
@@ -479,7 +537,6 @@ class AuthApp:
         )
         self.password_entry.pack(pady=(5, 20))
         
-        # Кнопки
         buttons_frame = tk.Frame(main_frame)
         buttons_frame.pack(pady=20)
         
@@ -541,7 +598,6 @@ class AuthApp:
             if response.status_code == 200:
                 self.token = response.json().get("token")
                 self.root.destroy()
-                # Вместо прямого запуска игры открываем окно профиля
                 ProfileWindow(self.token, username).run()
             elif response.status_code == 401:
                 messagebox.showerror("Ошибка", "Неверный логин или пароль")
@@ -562,18 +618,15 @@ class AuthApp:
         reg_window.geometry("400x550")
         reg_window.resizable(False, False)
         
-        # Центрируем окно регистрации
         screen_width = reg_window.winfo_screenwidth()
         screen_height = reg_window.winfo_screenheight()
         x = (screen_width - 400) // 2
         y = (screen_height - 550) // 2
         reg_window.geometry(f"400x550+{x}+{y}")
         
-        # Основной контейнер
         main_frame = tk.Frame(reg_window, padx=40, pady=20)
         main_frame.pack(expand=True, fill='both')
         
-        # Заголовок
         title_label = tk.Label(
             main_frame,
             text="Регистрация нового игрока",
@@ -582,7 +635,6 @@ class AuthApp:
         )
         title_label.pack()
         
-        # Форма регистрации
         form_frame = tk.Frame(main_frame)
         form_frame.pack(pady=20)
         
@@ -629,7 +681,6 @@ class AuthApp:
             password = password_entry.get()
             confirm_password = confirm_password_entry.get()
             
-            # Проверки ввода
             if not username or not password or not confirm_password:
                 messagebox.showerror("Ошибка", "Пожалуйста, заполните все поля")
                 return
@@ -664,7 +715,6 @@ class AuthApp:
                     )
                     reg_window.destroy()
                 else:
-                    # Обрабатываем все ошибки сервера единообразно
                     try:
                         error_detail = response.json().get("detail", "")
                         if "Username already exists" in error_detail:
@@ -694,7 +744,6 @@ class AuthApp:
                     "Произошла ошибка при подключении к серверу.\nПожалуйста, попробуйте позже."
                 )
 
-        # Кнопка регистрации
         register_btn = tk.Button(
             form_frame,
             text="Зарегистрироваться",
@@ -722,10 +771,8 @@ class AuthApp:
                 result = game.run()
                 
                 if result == "profile":
-                    # Возвращаемся в профиль
                     ProfileWindow(self.token, self.username).run()
                 elif result == "quit":
-                    # Выходим из игры в окно авторизации
                     AuthApp().run()
             else:
                 error_message = response.json().get("detail", "Неизвестная ошибка")
@@ -742,39 +789,37 @@ class AuthApp:
 
 class ProfileWindow:
     def __init__(self, token, username):
-        self.root = tk.Tk()
-        self.root.title("Flappy Bird - Личный кабинет")
-        self.root.geometry("500x600")
-        self.root.resizable(False, False)
-        
-        # Центрирование окна
-        screen_width = self.root.winfo_screenwidth()
-        screen_height = self.root.winfo_screenheight()
-        x = (screen_width - 500) // 2
-        y = (screen_height - 600) // 2
-        self.root.geometry(f"500x600+{x}+{y}")
-        
         self.token = token
         self.username = username
         
-        # Основной контейнер
-        main_frame = tk.Frame(self.root, padx=50, pady=30)
+        self.root = tk.Tk()
+        self.root.title("Flappy Bird - Личный кабинет")
+        self.root.geometry("400x600")
+        self.root.resizable(False, False)
+        
+        screen_width = self.root.winfo_screenwidth()
+        screen_height = self.root.winfo_screenheight()
+        x = (screen_width - 400) // 2
+        y = (screen_height - 600) // 2
+        self.root.geometry(f"400x600+{x}+{y}")
+        
+        main_frame = tk.Frame(self.root, padx=40, pady=30)
         main_frame.pack(expand=True, fill='both')
         
-        # Заголовок с приветствием
-        title_label = tk.Label(
-            main_frame,
-            text=f"Добро пожаловать, {username}!",
+        welcome_frame = tk.Frame(main_frame)
+        welcome_frame.pack(fill='x', pady=(0, 40))
+        
+        welcome_text = f"Добро пожаловать,\n{self.username}!"
+        tk.Label(
+            welcome_frame,
+            text=welcome_text,
             font=("Arial", 24, "bold"),
-            pady=30
-        )
-        title_label.pack()
+            justify=tk.CENTER
+        ).pack(expand=True)
         
-        # Кнопки
         buttons_frame = tk.Frame(main_frame)
-        buttons_frame.pack(pady=20)
+        buttons_frame.pack(fill='x')
         
-        # Кнопка начала игры
         play_btn = tk.Button(
             buttons_frame,
             text="Начать игру",
@@ -788,7 +833,6 @@ class ProfileWindow:
         )
         play_btn.pack(pady=10)
         
-        # Кнопка смены пароля
         change_pass_btn = tk.Button(
             buttons_frame,
             text="Сменить пароль",
@@ -802,7 +846,6 @@ class ProfileWindow:
         )
         change_pass_btn.pack(pady=10)
         
-        # Кнопка просмотра статистики
         stats_btn = tk.Button(
             buttons_frame,
             text="Общая статистика",
@@ -816,7 +859,6 @@ class ProfileWindow:
         )
         stats_btn.pack(pady=10)
         
-        # Кнопка выхода
         exit_btn = tk.Button(
             buttons_frame,
             text="Выйти",
@@ -830,16 +872,27 @@ class ProfileWindow:
         )
         exit_btn.pack(pady=10)
 
+        delete_btn = tk.Button(
+            buttons_frame,
+            text="Удалить аккаунт",
+            command=self.delete_account,
+            width=20,
+            font=("Arial", 14),
+            bg="#b71c1c",
+            fg="white",
+            relief=tk.RAISED,
+            cursor="hand2"
+        )
+        delete_btn.pack(pady=10)
+
     def start_game(self):
         self.root.destroy()
         game = FlappyBird(self.token)
         result = game.run()
         
         if result == "profile":
-            # Возвращаемся в профиль
             ProfileWindow(self.token, self.username).run()
         elif result == "quit":
-            # Выходим из игры в окно авторизации
             AuthApp().run()
 
     def change_password(self):
@@ -848,7 +901,6 @@ class ProfileWindow:
         change_window.geometry("400x300")
         change_window.resizable(False, False)
         
-        # Центрирование окна
         screen_width = change_window.winfo_screenwidth()
         screen_height = change_window.winfo_screenheight()
         x = (screen_width - 400) // 2
@@ -938,33 +990,59 @@ class ProfileWindow:
                 if not data["players"]:
                     stats_text = "Нет данных о играх"
                 else:
-                    # Формируем заголовок таблицы
-                    stats_text = "Игрок | Игр | Лучший | Средний\n"
-                    stats_text += "-" * 40 + "\n"
+                    stats_text = "Статистика игроков:\n"
+                    stats_text += "-" * 60 + "\n"
+                    stats_text += f"{'Игрок':<15} | {'Игр':^4} | {'Лучший':^7} | {'Средний':^7} | {'Последние 5':<15}\n"
+                    stats_text += "-" * 60 + "\n"
                     
-                    # Добавляем данные по каждому игроку
+                    total_games = 0
+                    global_best = 0
+                    all_scores = []
+                    
                     for player in data["players"]:
+                        last_scores = player.get('last_scores', [])
+                        last_scores_str = ", ".join(map(str, last_scores[:5]))
+                        if not last_scores_str:
+                            last_scores_str = "[]"
+                        
                         stats_text += f"{player['username']:<15} | "
-                        stats_text += f"{player['games_played']:<4} | "
-                        stats_text += f"{player['best_score']:<7} | "
-                        stats_text += f"{player['average_score']:.1f}\n"
+                        stats_text += f"{player['games_played']:^4} | "
+                        stats_text += f"{player['best_score']:^7} | "
+                        stats_text += f"{player['average_score']:^7.1f} | "
+                        stats_text += f"[{last_scores_str}]\n"
+                        
+                        total_games += player['games_played']
+                        global_best = max(global_best, player['best_score'])
+                        if player.get('last_scores'):
+                            all_scores.extend(player['last_scores'])
+                    
+                    stats_text += "\nОбщая статистика:\n"
+                    stats_text += "-" * 30 + "\n"
+                    stats_text += f"Всего игр: {total_games}\n"
+                    stats_text += f"Лучший результат: {global_best}\n"
+                    if all_scores:
+                        global_average = sum(all_scores) / len(all_scores)
+                        stats_text += f"Средний результат: {global_average:.1f}\n"
+                    else:
+                        stats_text += "Средний результат: 0\n"
             else:
                 stats_text = "Не удалось загрузить статистику"
             
         except requests.RequestException:
             stats_text = "Ошибка подключения к серверу"
+        except Exception as e:
+            stats_text = f"Ошибка при обработке данных: {str(e)}"
         
         stats_window = tk.Toplevel(self.root)
         stats_window.title("Общая статистика")
-        stats_window.geometry("500x400")  # Увеличил размер окна
+        stats_window.geometry("700x500")
         stats_window.resizable(False, False)
         
-        # Центрирование окна
         screen_width = stats_window.winfo_screenwidth()
         screen_height = stats_window.winfo_screenheight()
-        x = (screen_width - 500) // 2
-        y = (screen_height - 400) // 2
-        stats_window.geometry(f"500x400+{x}+{y}")
+        x = (screen_width - 700) // 2
+        y = (screen_height - 500) // 2
+        stats_window.geometry(f"700x500+{x}+{y}")
         
         frame = tk.Frame(stats_window, padx=40, pady=20)
         frame.pack(expand=True, fill='both')
@@ -975,24 +1053,67 @@ class ProfileWindow:
             font=("Arial", 16, "bold")
         ).pack(pady=20)
         
-        # Используем текстовое поле с моноширинным шрифтом для лучшего выравнивания
         text_widget = tk.Text(
             frame,
             font=("Courier New", 12),
-            height=15,
-            width=40,
+            height=20,
+            width=70,
             wrap=tk.NONE,
             bg=frame.cget("bg"),
             relief=tk.FLAT
         )
         text_widget.insert("1.0", stats_text)
-        text_widget.configure(state='disabled')  # Делаем только для чтения
+        text_widget.configure(state='disabled')
         text_widget.pack(pady=10)
 
     def logout(self):
         if messagebox.askyesno("Выход", "Вы уверены, что хотите выйти?"):
             self.root.destroy()
             AuthApp().run()
+
+    def delete_account(self):
+        if not messagebox.askyesno(
+            "Подтверждение удаления",
+            "Вы уверены, что хотите удалить свой аккаунт?\n\nЭто действие необратимо и приведет к потере всех данных и статистики.",
+            icon='warning'
+        ):
+            return
+            
+        if not messagebox.askyesno(
+            "Финальное подтверждение",
+            "Вы действительно хотите удалить свой аккаунт?\n\nПосле удаления восстановление будет невозможно.",
+            icon='warning'
+        ):
+            return
+        
+        try:
+            headers = {
+                "Authorization": f"Bearer {self.token}",
+                "Content-Type": "application/json"
+            }
+            response = requests.delete(
+                "http://127.0.0.1:8001/delete-account",
+                headers=headers
+            )
+            
+            if response.status_code == 200:
+                messagebox.showinfo(
+                    "Успех",
+                    "Ваш аккаунт был успешно удален."
+                )
+                self.root.destroy()
+                AuthApp().run()
+            else:
+                messagebox.showerror(
+                    "Ошибка",
+                    "Не удалось удалить аккаунт. Попробуйте позже."
+                )
+                
+        except requests.RequestException:
+            messagebox.showerror(
+                "Ошибка",
+                "Не удалось подключиться к серверу. Проверьте подключение к интернету."
+            )
 
     def run(self):
         self.root.mainloop()
