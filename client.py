@@ -13,7 +13,6 @@ class FlappyBird:
         self.token = token
         self.bird = pygame.Rect(65, 50, 50, 50)
         
-        # Загрузка всех необходимых изображений
         try:
             self.background = pygame.image.load("./assets/background.png").convert()
             self.birdSprites = [
@@ -24,7 +23,6 @@ class FlappyBird:
             self.wallUp = pygame.image.load("./assets/bottom.png").convert_alpha()
             self.wallDown = pygame.image.load("./assets/top.png").convert_alpha()
             
-            # Загрузка и масштабирование медалей
             self.medals = [
                 pygame.image.load("./assets/first.png").convert_alpha(),
                 pygame.image.load("./assets/second.png").convert_alpha(),
@@ -36,7 +34,6 @@ class FlappyBird:
             print(f"Ошибка загрузки изображений: {e}")
             sys.exit(1)
 
-        # Инициализация игровых параметров
         self.gap = 130
         self.wallx = 400
         self.birdY = 350
@@ -146,37 +143,28 @@ class FlappyBird:
         self.show_leaderboard = False
 
     def run(self):
-        pygame.init()
         clock = pygame.time.Clock()
-        running = True
+        self.show_menu()
         
-        while running:
-            # Игровой цикл
+        while True:
             while not self.dead:
                 self.game_loop()
                 clock.tick(60)
             
-            # После смерти
-            self.sprite = 2  # Показываем спрайт мёртвой птицы
+            self.sprite = 2
             self.screen.blit(self.birdSprites[self.sprite], (70, self.birdY))
             pygame.display.update()
             
-            # Небольшая задержка перед показом экрана окончания игры
-            pygame.time.wait(500)
-            
-            # Сохраняем результат
             self.save_score()
             self.update_leaderboard()
             
-            # Показываем экран окончания игры
-            if self.show_game_over():  # Если игрок нажал Enter
-                self.reset_game()  # Сбрасываем игру
-            else:  # Если игрок нажал ESC или закрыл окно
-                running = False
-                pygame.quit()
+            if self.game_over_screen():
+                self.reset_game()
+                continue
+            else:
+                break
 
     def game_loop(self):
-        # Обработка событий
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
@@ -191,18 +179,16 @@ class FlappyBird:
                     if self.show_leaderboard:
                         self.update_leaderboard()
 
-        # Обновление позиции птицы
         if self.jump:
             self.jumpSpeed -= 1
             self.birdY -= self.jumpSpeed
             self.jump -= 1
-            self.sprite = 1  # Птица летит вверх
+            self.sprite = 1
         else:
             self.birdY += self.gravity
             self.gravity += 0.2
-            self.sprite = 0  # Птица летит вниз
+            self.sprite = 0
 
-        # Проверка столкновений
         self.bird[1] = self.birdY
         upRect = pygame.Rect(self.wallx, 360 + self.gap - self.offset + 10,
                            self.wallUp.get_width() - 10, self.wallUp.get_height())
@@ -214,7 +200,6 @@ class FlappyBird:
         if not 0 < self.bird[1] < 720:
             self.dead = True
 
-        # Отрисовка
         self.screen.fill((255, 255, 255))
         self.screen.blit(self.background, (0, 0))
 
@@ -317,6 +302,115 @@ class FlappyBird:
                         
                         y += 40  # Увеличиваем отступ для следующей записи
             
+            # Отрисовка кнопок внизу
+            continue_rect = continue_text.get_rect(centerx=self.screen.get_width() // 2, y=550)
+            exit_rect = exit_text.get_rect(centerx=self.screen.get_width() // 2, y=600)
+            
+            self.screen.blit(continue_text, continue_rect)
+            self.screen.blit(exit_text, exit_rect)
+            
+            pygame.display.update()
+            clock.tick(60)
+
+    def show_menu(self):
+        clock = pygame.time.Clock()
+        font = pygame.font.SysFont("Arial", 30)
+
+        while True:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_RETURN:
+                        return
+
+            self.screen.fill((255, 255, 255))
+            self.screen.blit(self.background, (0, 0))
+
+            text = font.render("ENTER - НОВАЯ ИГРА", True, (255, 255, 255))
+            text_rect = text.get_rect(center=(self.screen.get_width() // 2, self.screen.get_height() // 2))
+            self.screen.blit(text, text_rect)
+
+            pygame.display.update()
+            clock.tick(60)
+
+    def game_over_screen(self):
+        clock = pygame.time.Clock()
+        self.update_leaderboard()
+
+        while True:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_RETURN:
+                        return True
+                    elif event.key == pygame.K_ESCAPE:
+                        pygame.quit()
+                        sys.exit()
+
+            self.screen.fill((255, 255, 255))
+            self.screen.blit(self.background, (0, 0))
+
+            # Шрифты
+            title_font = pygame.font.SysFont("Arial", 50)
+            font = pygame.font.SysFont("Arial", 30)
+
+            # Тексты
+            game_over = title_font.render("ИГРА ОКОНЧЕНА!", True, (255, 255, 255))
+            score = font.render(f"ВАШ СЧЁТ: {self.counter}", True, (255, 255, 255))
+            leaderboard_title = font.render("ТАБЛИЦА ЛИДЕРОВ", True, (255, 255, 255))
+            continue_text = font.render("ENTER - НОВАЯ ИГРА", True, (255, 255, 255))
+            exit_text = font.render("ESC - ВЫХОД", True, (255, 255, 255))
+
+            # Позиционирование с увеличенными отступами
+            game_over_rect = game_over.get_rect(centerx=self.screen.get_width() // 2, y=50)
+            score_rect = score.get_rect(centerx=self.screen.get_width() // 2, y=120)
+            leaderboard_rect = leaderboard_title.get_rect(centerx=self.screen.get_width() // 2, y=200)
+
+            # Отрисовка заголовков
+            self.screen.blit(game_over, game_over_rect)
+            self.screen.blit(score, score_rect)
+            self.screen.blit(leaderboard_title, leaderboard_rect)
+
+            # Отображение результатов таблицы лидеров
+            y = 250  # Увеличиваем начальную позицию для записей таблицы лидеров
+            if not self.leaderboard_data:
+                text = font.render("Нет рекордов", True, (255, 255, 255))
+                text_rect = text.get_rect(centerx=self.screen.get_width() // 2, y=y)
+                self.screen.blit(text, text_rect)
+            else:
+                for item in self.leaderboard_data:
+                    position = item["position"]
+                    if position <= 3:
+                        # Отрисовка медали
+                        medal = self.medals[position - 1]
+                        medal_rect = medal.get_rect(
+                            right=self.screen.get_width() // 2 - 70,
+                            centery=y + 15
+                        )
+                        self.screen.blit(medal, medal_rect)
+                        
+                        # Отрисовка имени игрока
+                        name_text = font.render(item['username'], True, (255, 255, 255))
+                        name_rect = name_text.get_rect(
+                            centerx=self.screen.get_width() // 2 - 20,
+                            centery=y + 15
+                        )
+                        self.screen.blit(name_text, name_rect)
+                        
+                        # Отрисовка счета
+                        score_text = font.render(str(item['score']), True, (255, 255, 255))
+                        score_rect = score_text.get_rect(
+                            left=name_rect.right + 20,
+                            centery=y + 15
+                        )
+                        self.screen.blit(score_text, score_rect)
+                        
+                        y += 50  # Увеличиваем отступ между записями
+
             # Отрисовка кнопок внизу
             continue_rect = continue_text.get_rect(centerx=self.screen.get_width() // 2, y=550)
             exit_rect = exit_text.get_rect(centerx=self.screen.get_width() // 2, y=600)
@@ -614,17 +708,15 @@ class AuthApp:
             return
         
         try:
-            # Проверяем валидность токена
             headers = {"Authorization": f"Bearer {self.token}"}
             response = requests.get("http://127.0.0.1:8001/me", headers=headers)
             
             if response.status_code == 200:
                 game = FlappyBird(self.token)
-                game.run()
+                game.run()  # Теперь просто запускаем игру
             else:
                 error_message = response.json().get("detail", "Неизвестная ошибка")
                 messagebox.showerror("Ошибка", f"Ошибка авторизации: {error_message}")
-                # Можно добавить перенаправление на окно входа
                 self.__init__()
                 self.run()
                 

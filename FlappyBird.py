@@ -72,7 +72,7 @@ class FlappyBird:
 
     def show_menu(self):
         clock = pygame.time.Clock()
-        font = pygame.font.SysFont("Arial", 20)
+        font = pygame.font.SysFont("Arial", 30)  # Увеличим размер шрифта
 
         while True:
             for event in pygame.event.get():
@@ -80,19 +80,15 @@ class FlappyBird:
                     sys.exit()
                 elif event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_RETURN:
-                        self.menu_counter += 1
                         return
 
             self.screen.fill((255, 255, 255))
             self.screen.blit(self.background, (0, 0))
 
-            text = font.render("Чтобы начать играть, нажмите (ENTER)", True, (255, 255, 255))
-            text_rect = text.get_rect(center=(200, 350))
+            # Отрисовка текста по центру экрана
+            text = font.render("ENTER - НОВАЯ ИГРА", True, (255, 255, 255))
+            text_rect = text.get_rect(center=(self.screen.get_width() // 2, self.screen.get_height() // 2))
             self.screen.blit(text, text_rect)
-
-            menu_count_text = font.render(f"Предыдущий счет: {self.menu_counter}", True, (255, 255, 255))
-            menu_count_rect = menu_count_text.get_rect(center=(200, 400))
-            self.screen.blit(menu_count_text, menu_count_rect)
 
             pygame.display.update()
             clock.tick(60)
