@@ -23,6 +23,16 @@ class FlappyBird:
             ]
             self.wallUp = pygame.image.load("./assets/bottom.png").convert_alpha()
             self.wallDown = pygame.image.load("./assets/top.png").convert_alpha()
+            
+            # Добавляем загрузку медалей
+            self.medals = [
+                pygame.image.load("./assets/first.png").convert_alpha(),
+                pygame.image.load("./assets/second.png").convert_alpha(),
+                pygame.image.load("./assets/3rd.png").convert_alpha()
+            ]
+            # Масштабируем медали до нужного размера (например, 30x30 пикселей)
+            self.medals = [pygame.transform.scale(medal, (30, 30)) for medal in self.medals]
+            
         except pygame.error as e:
             print(f"Ошибка загрузки изображений: {e}")
             print("Убедитесь, что все файлы находятся в папке assets:")
@@ -32,6 +42,9 @@ class FlappyBird:
             print("- dead.png (мёртвая птица)")
             print("- bottom.png (нижняя труба)")
             print("- top.png (верхняя труба)")
+            print("- first.png (медаль за первое место)")
+            print("- second.png (медаль за второе место)")
+            print("- 3rd.png (медаль за третье место)")
             sys.exit(1)
 
         self.gap = 130
@@ -100,25 +113,34 @@ class FlappyBird:
             return
         
         # Отображение результатов
-        medals = ["🥇", "🥈", "🥉"]
         for item in self.leaderboard_data:
             position = item["position"]
             if position <= 3:
-                medal = medals[position - 1]
-                text = f"{medal} {item['username']}"
-                score = f"{item['score']}"
+                # Отрисовка медали
+                medal = self.medals[position - 1]
+                medal_rect = medal.get_rect(
+                    right=self.screen.get_width() // 2 - 70,  # Позиция медали слева от имени
+                    centery=y + 15  # Центрируем медаль по вертикали
+                )
+                self.screen.blit(medal, medal_rect)
                 
                 # Отрисовка имени игрока
-                name_text = font.render(text, True, (255, 255, 255))
-                name_rect = name_text.get_rect(centerx=self.screen.get_width() // 2 - 50, y=y)
+                name_text = font.render(item['username'], True, (255, 255, 255))
+                name_rect = name_text.get_rect(
+                    centerx=self.screen.get_width() // 2 - 20,
+                    centery=y + 15
+                )
                 self.screen.blit(name_text, name_rect)
                 
                 # Отрисовка счета
-                score_text = font.render(score, True, (255, 255, 255))
-                score_rect = score_text.get_rect(left=name_rect.right + 20, centery=name_rect.centery)
+                score_text = font.render(str(item['score']), True, (255, 255, 255))
+                score_rect = score_text.get_rect(
+                    left=name_rect.right + 20,
+                    centery=y + 15
+                )
                 self.screen.blit(score_text, score_rect)
                 
-                y += 40
+                y += 40  # Увеличиваем отступ для следующей записи
 
     def reset_game(self):
         # Сбрасываем все параметры игры
@@ -276,23 +298,34 @@ class FlappyBird:
                 text_rect = text.get_rect(centerx=self.screen.get_width() // 2, y=y)
                 self.screen.blit(text, text_rect)
             else:
-                medals = ["🥇", "🥈", "🥉"]
                 for item in self.leaderboard_data:
                     position = item["position"]
                     if position <= 3:
-                        medal = medals[position - 1]
-                        text = f"{medal} {item['username']}"
-                        score = f"{item['score']}"
+                        # Отрисовка медали
+                        medal = self.medals[position - 1]
+                        medal_rect = medal.get_rect(
+                            right=self.screen.get_width() // 2 - 70,  # Позиция медали слева от имени
+                            centery=y + 15  # Центрируем медаль по вертикали
+                        )
+                        self.screen.blit(medal, medal_rect)
                         
-                        name_text = font.render(text, True, (255, 255, 255))
-                        name_rect = name_text.get_rect(centerx=self.screen.get_width() // 2 - 50, y=y)
+                        # Отрисовка имени игрока
+                        name_text = font.render(item['username'], True, (255, 255, 255))
+                        name_rect = name_text.get_rect(
+                            centerx=self.screen.get_width() // 2 - 20,
+                            centery=y + 15
+                        )
                         self.screen.blit(name_text, name_rect)
                         
-                        score_text = font.render(score, True, (255, 255, 255))
-                        score_rect = score_text.get_rect(left=name_rect.right + 20, centery=name_rect.centery)
+                        # Отрисовка счета
+                        score_text = font.render(str(item['score']), True, (255, 255, 255))
+                        score_rect = score_text.get_rect(
+                            left=name_rect.right + 20,
+                            centery=y + 15
+                        )
                         self.screen.blit(score_text, score_rect)
                         
-                        y += 40
+                        y += 40  # Увеличиваем отступ для следующей записи
             
             # Отрисовка кнопок внизу
             continue_rect = continue_text.get_rect(centerx=self.screen.get_width() // 2, y=550)
