@@ -255,20 +255,49 @@ class FlappyBird:
             continue_text = font.render("ENTER - НОВАЯ ИГРА", True, (255, 255, 255))
             exit_text = font.render("ESC - ВЫХОД", True, (255, 255, 255))
             
-            # Позиционирование
-            game_over_rect = game_over.get_rect(centerx=self.screen.get_width() // 2, y=100)
-            score_rect = score.get_rect(centerx=self.screen.get_width() // 2, y=180)
+            # Позиционирование (изменяем координаты y)
+            game_over_rect = game_over.get_rect(centerx=self.screen.get_width() // 2, y=50)
+            score_rect = score.get_rect(centerx=self.screen.get_width() // 2, y=120)
             
-            # Отрисовка таблицы лидеров (между счетом и кнопками)
-            self.draw_leaderboard()
-            
-            # Отрисовка кнопок внизу
-            continue_rect = continue_text.get_rect(centerx=self.screen.get_width() // 2, y=500)
-            exit_rect = exit_text.get_rect(centerx=self.screen.get_width() // 2, y=550)
-            
-            # Отрисовка всех элементов
+            # Отрисовка заголовка и счета
             self.screen.blit(game_over, game_over_rect)
             self.screen.blit(score, score_rect)
+            
+            # Отрисовка таблицы лидеров со смещенной позицией y
+            font = pygame.font.SysFont("Arial", 25)
+            leaderboard_title = font.render("ТАБЛИЦА ЛИДЕРОВ", True, (255, 255, 255))
+            leaderboard_rect = leaderboard_title.get_rect(centerx=self.screen.get_width() // 2, y=200)
+            self.screen.blit(leaderboard_title, leaderboard_rect)
+            
+            # Отображение результатов таблицы лидеров
+            y = 250  # Начальная позиция для записей таблицы лидеров
+            if not self.leaderboard_data:
+                text = font.render("Нет рекордов", True, (255, 255, 255))
+                text_rect = text.get_rect(centerx=self.screen.get_width() // 2, y=y)
+                self.screen.blit(text, text_rect)
+            else:
+                medals = ["🥇", "🥈", "🥉"]
+                for item in self.leaderboard_data:
+                    position = item["position"]
+                    if position <= 3:
+                        medal = medals[position - 1]
+                        text = f"{medal} {item['username']}"
+                        score = f"{item['score']}"
+                        
+                        name_text = font.render(text, True, (255, 255, 255))
+                        name_rect = name_text.get_rect(centerx=self.screen.get_width() // 2 - 50, y=y)
+                        self.screen.blit(name_text, name_rect)
+                        
+                        score_text = font.render(score, True, (255, 255, 255))
+                        score_rect = score_text.get_rect(left=name_rect.right + 20, centery=name_rect.centery)
+                        self.screen.blit(score_text, score_rect)
+                        
+                        y += 40
+            
+            # Отрисовка кнопок внизу
+            continue_rect = continue_text.get_rect(centerx=self.screen.get_width() // 2, y=550)
+            exit_rect = exit_text.get_rect(centerx=self.screen.get_width() // 2, y=600)
+            
             self.screen.blit(continue_text, continue_rect)
             self.screen.blit(exit_text, exit_rect)
             

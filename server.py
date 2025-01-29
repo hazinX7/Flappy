@@ -248,14 +248,22 @@ async def save_score(score_data: ScoreCreate, authorization: Optional[str] = Hea
         ''', (user_id,))
         best_score = c.fetchone()
         
-        # Сохраняем только если это лучший результат или первая игра
+        # Если это первый результат или новый рекорд
         if not best_score or score_data.score > best_score[0]:
+            # Сначала удаляем все предыдущие результаты пользователя
+            c.execute('''
+                DELETE FROM scores 
+                WHERE user_id = ?
+            ''', (user_id,))
+            
+            # Затем добавляем новый рекорд
             c.execute('''
                 INSERT INTO scores (user_id, score, created_at)
                 VALUES (?, ?, ?)
             ''', (user_id, score_data.score, datetime.utcnow().isoformat()))
+            
             conn.commit()
-            print(f"Score saved successfully: user_id={user_id}, score={score_data.score}")
+            print(f"New record saved: user_id={user_id}, score={score_data.score}")
         
         return {"success": True}
     except jwt.ExpiredSignatureError:
