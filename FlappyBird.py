@@ -101,6 +101,27 @@ class FlappyBird:
     def game_loop(self):
         clock = pygame.time.Clock()
         font = pygame.font.SysFont("Arial", 30)
+        countdown_font = pygame.font.SysFont("Arial", 80)
+        
+        # Отсчет перед началом игры
+        for i in range(3, 0, -1):
+            self.screen.fill((255, 255, 255))
+            self.screen.blit(self.background, (0, 0))
+            
+            # Отрисовка птицы в начальной позиции
+            self.screen.blit(self.birdSprites[0], (70, self.birdY))
+            
+            # Отрисовка стен
+            self.screen.blit(self.wallUp, (self.wallx, 360 + self.gapx - self.offset))
+            self.screen.blit(self.wallDown, (self.wallx, 0 - self.gapx - self.offset))
+            
+            # Отрисовка счетчика
+            countdown_text = countdown_font.render(str(i), True, (255, 255, 255))
+            countdown_rect = countdown_text.get_rect(center=(self.screen.get_width() // 2, self.screen.get_height() // 2))
+            self.screen.blit(countdown_text, countdown_rect)
+            
+            pygame.display.update()
+            pygame.time.wait(1000)
         
         while not self.dead:
             clock.tick(60)

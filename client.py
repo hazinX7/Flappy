@@ -142,10 +142,35 @@ class FlappyBird:
         self.show_menu()
         
         while True:
+            self.reset_game()  # Сбрасываем состояние игры
+            
+            # Отсчет перед началом игры
+            countdown_font = pygame.font.SysFont("Arial", 80)
+            for i in range(3, 0, -1):
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        pygame.quit()
+                        sys.exit()
+            
+            self.screen.fill((255, 255, 255))
+            self.screen.blit(self.background, (0, 0))
+            self.screen.blit(self.birdSprites[0], (70, self.birdY))
+            self.screen.blit(self.wallUp, (self.wallx, 360 + self.gap - self.offset))
+            self.screen.blit(self.wallDown, (self.wallx, 0 - self.gap - self.offset))
+            
+            countdown_text = countdown_font.render(str(i), True, (255, 255, 255))
+            countdown_rect = countdown_text.get_rect(center=(self.screen.get_width() // 2, self.screen.get_height() // 2))
+            self.screen.blit(countdown_text, countdown_rect)
+            
+            pygame.display.update()
+            pygame.time.wait(1000)
+        
+            # Игровой цикл
             while not self.dead:
                 self.game_loop()
                 clock.tick(60)
             
+            # После смерти птицы
             self.sprite = 2
             self.screen.blit(self.birdSprites[self.sprite], (70, self.birdY))
             pygame.display.update()
@@ -153,10 +178,10 @@ class FlappyBird:
             self.save_score()
             self.update_leaderboard()
             
+            # Экран окончания игры
             result = self.game_over_screen()
             if result == "restart":
-                self.reset_game()
-                continue
+                continue  # Теперь continue находится в правильном месте
             elif result == "profile":
                 pygame.quit()
                 return "profile"
@@ -191,9 +216,9 @@ class FlappyBird:
 
         self.bird[1] = self.birdY
         upRect = pygame.Rect(self.wallx, 360 + self.gap - self.offset + 10,
-                           self.wallUp.get_width() - 10, self.wallUp.get_height())
+                            self.wallUp.get_width() - 10, self.wallUp.get_height())
         downRect = pygame.Rect(self.wallx, 0 - self.gap - self.offset - 10,
-                             self.wallDown.get_width() - 10, self.wallDown.get_height())
+                              self.wallDown.get_width() - 10, self.wallDown.get_height())
 
         if upRect.colliderect(self.bird) or downRect.colliderect(self.bird):
             self.dead = True
