@@ -9,7 +9,7 @@ import sqlite3
 
 app = FastAPI()
 
-# CORS settings remain unchanged
+# Настройка CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -20,7 +20,6 @@ app.add_middleware(
 
 SECRET_KEY = "your_secret_key_here"
 ALGORITHM = "HS256"
-
 DATABASE_FILE = "my_database.db"
 
 class UserCreate(BaseModel):
@@ -66,7 +65,7 @@ def create_tables():
         conn = sqlite3.connect(DATABASE_FILE)
         c = conn.cursor()
         
-        # Создаем таблицу пользователей
+        # Создание таблицы пользователей
         c.execute('''
             CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -76,7 +75,7 @@ def create_tables():
             )
         ''')
         
-        # Создаем таблицу счета
+        # Создание таблицы счета
         c.execute('''
             CREATE TABLE IF NOT EXISTS scores (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -88,7 +87,6 @@ def create_tables():
         ''')
         
         conn.commit()
-        print("Tables created successfully")
     except Exception as e:
         print(f"Error creating tables: {e}")
     finally:
@@ -101,7 +99,6 @@ def load_database():
     rows = c.fetchall()
     users = []
     for row in rows:
-        # Преобразуем дату только если она строка
         created_at = row[3]
         if isinstance(created_at, str):
             created_at = datetime.fromisoformat(created_at)
@@ -123,7 +120,6 @@ def save_user(user):
             VALUES (?, ?, ?)
         ''', (user["username"], user["password"], user["created_at"]))
         conn.commit()
-        print(f"User saved successfully: {user['username']}")
     except Exception as e:
         print(f"Error saving user: {e}")
         raise e
@@ -133,7 +129,7 @@ def save_user(user):
 @app.post("/register", response_model=UserOut)
 async def register(user: UserCreate):
     try:
-        create_tables()  # Create tables if they don't exist
+        create_tables()
         users = load_database()
 
         if not user.username or not user.password:
@@ -157,7 +153,7 @@ async def register(user: UserCreate):
 
         save_user(new_user)
 
-        # Get the newly created user's id
+        # Получение ID нового пользователя
         conn = sqlite3.connect(DATABASE_FILE)
         c = conn.cursor()
         c.execute("SELECT last_insert_rowid()")
@@ -170,15 +166,13 @@ async def register(user: UserCreate):
             created_at=datetime.fromisoformat(new_user["created_at"]),
         )
     except Exception as e:
-        print(f"Registration error: {str(e)}")  # Для отладки
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/login")
 async def login(user: UserCreate):
     users = load_database()
-
-    # Find the user in the database
     db_user = next((u for u in users if u["username"] == user.username), None)
+    
     if not db_user or not verify_password(user.password, db_user["password"]):
         raise HTTPException(status_code=401, detail="Incorrect username or password")
 
@@ -203,7 +197,6 @@ async def me(authorization: Optional[str] = Header(None)):
         if not user:
             raise HTTPException(status_code=401, detail="User not found")
 
-        # Убедимся, что created_at это строка перед преобразованием
         created_at = user["created_at"]
         if isinstance(created_at, str):
             created_at = datetime.fromisoformat(created_at)
@@ -215,12 +208,7 @@ async def me(authorization: Optional[str] = Header(None)):
             username=user["username"],
             created_at=created_at,
         )
-    except jwt.ExpiredSignatureError:
-        raise HTTPException(status_code=401, detail="Token expired")
-    except jwt.InvalidTokenError:
-        raise HTTPException(status_code=401, detail="Invalid token")
     except Exception as e:
-        print(f"Error in /me endpoint: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/scores")
@@ -229,7 +217,6 @@ async def save_score(score_data: ScoreCreate, authorization: Optional[str] = Hea
         raise HTTPException(status_code=401, detail="Authorization header missing")
     
     try:
-        # Проверяем формат токена
         if not authorization.startswith("Bearer "):
             raise HTTPException(status_code=401, detail="Invalid authorization format")
         
@@ -239,7 +226,7 @@ async def save_score(score_data: ScoreCreate, authorization: Optional[str] = Hea
         conn = sqlite3.connect(DATABASE_FILE)
         c = conn.cursor()
         
-        # Проверяем лучший результат пользователя
+        # Проверка лучшего результата пользователя
         c.execute('''
             SELECT score FROM scores 
             WHERE user_id = ? 
@@ -248,30 +235,22 @@ async def save_score(score_data: ScoreCreate, authorization: Optional[str] = Hea
         ''', (user_id,))
         best_score = c.fetchone()
         
-        # Если это первый результат или новый рекорд
+        # Сохранение только если это лучший результат
         if not best_score or score_data.score > best_score[0]:
-            # Сначала удаляем все предыдущие результаты пользователя
             c.execute('''
                 DELETE FROM scores 
                 WHERE user_id = ?
             ''', (user_id,))
             
-            # Затем добавляем новый рекорд
             c.execute('''
                 INSERT INTO scores (user_id, score, created_at)
                 VALUES (?, ?, ?)
             ''', (user_id, score_data.score, datetime.utcnow().isoformat()))
             
             conn.commit()
-            print(f"New record saved: user_id={user_id}, score={score_data.score}")
         
         return {"success": True}
-    except jwt.ExpiredSignatureError:
-        raise HTTPException(status_code=401, detail="Token has expired")
-    except jwt.InvalidTokenError:
-        raise HTTPException(status_code=401, detail="Invalid token")
     except Exception as e:
-        print(f"Error saving score: {e}")
         raise HTTPException(status_code=500, detail=str(e))
     finally:
         if 'conn' in locals():
@@ -283,7 +262,7 @@ async def get_leaderboard():
     c = conn.cursor()
     
     try:
-        # Получаем лучшие результаты каждого игрока
+        # Получение лучших результатов каждого игрока
         c.execute('''
             WITH RankedScores AS (
                 SELECT 
@@ -301,7 +280,6 @@ async def get_leaderboard():
         ''')
         rows = c.fetchall()
         
-        # Форматируем результаты
         results = []
         for i, (username, score) in enumerate(rows, 1):
             results.append({
@@ -316,16 +294,5 @@ async def get_leaderboard():
 
 if __name__ == "__main__":
     import uvicorn
-    
-    # Создаем таблицы при запуске
     create_tables()
-    
-    # Проверяем существование таблиц
-    conn = sqlite3.connect(DATABASE_FILE)
-    c = conn.cursor()
-    c.execute("SELECT name FROM sqlite_master WHERE type='table'")
-    tables = c.fetchall()
-    print("Existing tables:", tables)
-    conn.close()
-    
     uvicorn.run(app, host="127.0.0.1", port=8001)

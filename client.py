@@ -13,40 +13,30 @@ class FlappyBird:
         self.token = token
         self.bird = pygame.Rect(65, 50, 50, 50)
         
-        # Загрузка изображений
+        # Загрузка всех необходимых изображений
         try:
             self.background = pygame.image.load("./assets/background.png").convert()
             self.birdSprites = [
-                pygame.image.load("./assets/1.png").convert_alpha(),  # Птица летит вниз
-                pygame.image.load("./assets/2.png").convert_alpha(),  # Птица летит вверх
-                pygame.image.load("./assets/dead.png").convert_alpha()  # Мёртвая птица
+                pygame.image.load("./assets/1.png").convert_alpha(),
+                pygame.image.load("./assets/2.png").convert_alpha(),
+                pygame.image.load("./assets/dead.png").convert_alpha()
             ]
             self.wallUp = pygame.image.load("./assets/bottom.png").convert_alpha()
             self.wallDown = pygame.image.load("./assets/top.png").convert_alpha()
             
-            # Добавляем загрузку медалей
+            # Загрузка и масштабирование медалей
             self.medals = [
                 pygame.image.load("./assets/first.png").convert_alpha(),
                 pygame.image.load("./assets/second.png").convert_alpha(),
                 pygame.image.load("./assets/3rd.png").convert_alpha()
             ]
-            # Масштабируем медали до нужного размера (например, 30x30 пикселей)
             self.medals = [pygame.transform.scale(medal, (30, 30)) for medal in self.medals]
             
         except pygame.error as e:
             print(f"Ошибка загрузки изображений: {e}")
-            print("Убедитесь, что все файлы находятся в папке assets:")
-            print("- background.png (задний фон)")
-            print("- 1.png (птица летит вниз)")
-            print("- 2.png (птица летит вверх)")
-            print("- dead.png (мёртвая птица)")
-            print("- bottom.png (нижняя труба)")
-            print("- top.png (верхняя труба)")
-            print("- first.png (медаль за первое место)")
-            print("- second.png (медаль за второе место)")
-            print("- 3rd.png (медаль за третье место)")
             sys.exit(1)
 
+        # Инициализация игровых параметров
         self.gap = 130
         self.wallx = 400
         self.birdY = 350
@@ -54,13 +44,13 @@ class FlappyBird:
         self.jumpSpeed = 10
         self.gravity = 5
         self.dead = False
-        self.sprite = 0  # Индекс текущего спрайта
+        self.sprite = 0
         self.counter = 0
         self.offset = random.randint(-110, 110)
         self.show_leaderboard = False
         self.leaderboard_data = []
         self.update_leaderboard()
-        self.reset_game()  # Вызываем reset_game при инициализации
+        self.reset_game()
 
     def update_leaderboard(self):
         try:
@@ -339,20 +329,21 @@ class FlappyBird:
 
 class AuthApp:
     def __init__(self):
+        # Настройка главного окна
         self.root = tk.Tk()
         self.root.title("Flappy Bird - Авторизация")
-        self.root.geometry("500x600")  # Увеличиваем размер окна
+        self.root.geometry("500x600")
         self.root.resizable(False, False)
         
-        # Центрируем окно
+        # Центрирование окна
         screen_width = self.root.winfo_screenwidth()
         screen_height = self.root.winfo_screenheight()
-        x = (screen_width - 500) // 2  # Обновляем координаты с учетом новой ширины
-        y = (screen_height - 600) // 2  # Обновляем координаты с учетом новой высоты
+        x = (screen_width - 500) // 2
+        y = (screen_height - 600) // 2
         self.root.geometry(f"500x600+{x}+{y}")
         
-        # Создаем основной контейнер с отступами
-        main_frame = tk.Frame(self.root, padx=50, pady=30)  # Увеличиваем отступы
+        # Создание интерфейса
+        main_frame = tk.Frame(self.root, padx=50, pady=30)
         main_frame.pack(expand=True, fill='both')
         
         # Заголовок с измененными параметрами
